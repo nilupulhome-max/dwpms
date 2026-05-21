@@ -63,7 +63,6 @@ body{
     background:#1e3a8a;
     color:white;
     padding:15px;
-    font-size:22px;
     font-weight:bold;
     display: flex;
     justify-content: space-between;
@@ -123,19 +122,22 @@ body{
     flex:1;
     min-width:140px;
 }
-.header-left,
+/* LEFT SIDE (logo + text close together) */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* 👈 controls closeness */
+}
+
 .header-right {
     display: flex;
     align-items: center;
 }
+/* TITLE STYLE */
 .header-title {
-    font-size: 24px;
-    font-weight: bold;
-}
-
-.navbar {
-    display: flex;
-    align-items: center;
+    font-size: 22px;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .logo {
