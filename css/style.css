@@ -104,60 +104,87 @@ body{
     min-width:140px;
 }
 
-/* TASK CARD */
+/* TASK CARD DASHBOARD */
 
-.task-card{
+.task-row{
     background:white;
-    border-radius:15px;
-    padding:15px;
-    margin-bottom:15px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.1);
-}
-
-.task-card__top{
+    border-radius:12px;
+    padding:12px 15px;
+    margin-bottom:10px;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:15px;
+    gap:15px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+    border-left:5px solid #1e3a8a;
 }
 
-.task-card__title{
-    margin:0;
+/* LEFT */
+
+.task-row__left{
+    flex:1;
+}
+
+.task-row__title{
+    font-size:18px;
+    font-weight:bold;
     color:#1e3a8a;
+    margin-bottom:4px;
 }
 
-.task-card__machine{
+.task-row__machine{
     color:#666;
+    font-size:13px;
 }
 
-.task-card__details{
-    display:grid;
-    grid-template-columns:
-    repeat(auto-fit,minmax(150px,1fr));
-    gap:10px;
+/* CENTER */
+
+.task-row__center{
+    flex:1.2;
 }
 
-.task-card__detail-box{
-    background:#f4f7fb;
-    padding:10px;
-    border-radius:10px;
+.task-row__service{
+    font-weight:bold;
+    color:#111;
+    margin-bottom:4px;
 }
 
-.task-card__badge{
-    padding:6px 12px;
+.task-row__week{
+    color:#444;
+    font-size:13px;
+    margin-bottom:3px;
+}
+
+.task-row__range{
+    color:#777;
+    font-size:12px;
+}
+
+/* RIGHT */
+
+.task-row__right{
+    min-width:100px;
+    text-align:right;
+}
+
+/* BADGES */
+
+.task-row__badge{
+    padding:6px 14px;
     border-radius:20px;
     color:white;
     font-size:12px;
     font-weight:bold;
 }
 
-.task-card__badge--pending{
+.task-row__badge--pending{
     background:orange;
 }
 
-.task-card__badge--completed{
+.task-row__badge--completed{
     background:green;
 }
+
 
 .hidden{
     display:none;

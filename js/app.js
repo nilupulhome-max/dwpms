@@ -220,67 +220,51 @@ function renderTaskCards(taskData){
 
         taskListContainer.innerHTML += `
 
-        <div class="task-card">
+        <div class="task-row">
 
-            <div class="task-card__top">
+            <!-- LEFT SIDE -->
+            <div class="task-row__left">
 
-                <div>
-
-                    <h3 class="task-card__title">
-                        ${taskItem.planid}
-                    </h3>
-
-                    <p class="task-card__machine">
-                        Machine :
-                        ${taskItem.machine_no}
-                    </p>
-
+                <div class="task-row__title">
+                    ${taskItem.planid}
                 </div>
 
+                <div class="task-row__machine">
+                    Machine : ${taskItem.machine_no}
+                </div>
+
+            </div>
+
+            <!-- CENTER -->
+            <div class="task-row__center">
+
+                <div class="task-row__service">
+                    ${taskItem.service_type}
+                </div>
+
+                <div class="task-row__week">
+                    Week : ${taskItem.year_week}
+                </div>
+
+                <div class="task-row__range">
+                    ${weekRangeText}
+                </div>
+
+            </div>
+
+            <!-- RIGHT -->
+            <div class="task-row__right">
+
                 <span class="
-                    task-card__badge
+                    task-row__badge
                     ${taskItem.status === 'Completed'
-                        ? 'task-card__badge--completed'
-                        : 'task-card__badge--pending'}
+                        ? 'task-row__badge--completed'
+                        : 'task-row__badge--pending'}
                 ">
 
                     ${taskItem.status}
 
                 </span>
-
-            </div>
-
-            <div class="task-card__details">
-
-                <div class="task-card__detail-box">
-
-                    <label>Service</label>
-
-                    <p>
-                        ${taskItem.service_type}
-                    </p>
-
-                </div>
-
-                <div class="task-card__detail-box">
-
-                    <label>Week</label>
-
-                    <p>
-                        ${taskItem.year_week}
-                    </p>
-
-                </div>
-
-                <div class="task-card__detail-box">
-
-                    <label>Week Range</label>
-
-                    <p>
-                        ${weekRangeText}
-                    </p>
-
-                </div>
 
             </div>
 
