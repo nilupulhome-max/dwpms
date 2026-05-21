@@ -61,25 +61,34 @@ body{
 }
 
 .dashboard__container{
-    padding:15px;
+    padding:5px;
 }
 
 .dashboard__stats-grid{
     display:grid;
     grid-template-columns:
     repeat(auto-fit,minmax(180px,1fr));
-    gap:15px;
+    gap:10px;
 }
 
 .dashboard__stat-card{
-    background:white;
-    padding:20px;
+    background:rgb(253, 247, 74);
+    padding:10px 12px;
     border-radius:15px;
     text-align:center;
     box-shadow:0 4px 10px rgba(0,0,0,0.1);
 }
+.dashboard__stat-card h2{
+    margin:0;
+    font-size:14px;
+    font-weight:600;
+}
 
-
+.dashboard__stat-card p{
+    margin:5px 0 0 0;
+    font-size:18px;
+    font-weight:bold;
+}
 .dashboard__filter-card{
     background:white;
     padding:15px;
