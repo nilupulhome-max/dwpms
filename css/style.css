@@ -62,12 +62,11 @@ body{
 .dashboard__header{
     background:#1e3a8a;
     color:white;
-    padding:15px;
-    font-weight:bold;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    justify-content: space-between;
+    padding: 10px 15px;
+    flex-wrap: wrap; /* important */
 }
 
 .dashboard__container{
@@ -126,22 +125,27 @@ body{
 .header-left {
     display: flex;
     align-items: center;
-    gap: 10px; /* 👈 controls closeness */
+    gap: 10px;/* 👈 controls closeness */
+    flex: 1;
+    min-width: 0; 
 }
 
+/* RIGHT SIDE */
 .header-right {
     display: flex;
     align-items: center;
 }
-/* TITLE STYLE */
+
+/* TITLE */
 .header-title {
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 600;
-    white-space: nowrap;
+    white-space: normal;   /* allow wrap */
+    word-break: break-word;
 }
 
 .logo {
-    height: 45px;
+    height: 38px;
     width: auto;
 }
 
