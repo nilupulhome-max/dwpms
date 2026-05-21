@@ -123,6 +123,11 @@ body{
     flex:1;
     min-width:140px;
 }
+.header-left,
+.header-right {
+    display: flex;
+    align-items: center;
+}
 .header-title {
     font-size: 24px;
     font-weight: bold;
