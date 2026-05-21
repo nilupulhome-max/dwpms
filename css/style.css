@@ -142,7 +142,7 @@ body{
     font-weight: 600;
     white-space: normal;   /* allow wrap */
     word-break: break-word;
-    align-items: center;
+     /*  text-align: center;   /* ✅ this is what you need */
 
 }
 
