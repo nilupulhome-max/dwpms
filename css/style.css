@@ -1,0 +1,158 @@
+body{
+    margin:0;
+    font-family:Segoe UI;
+    background:#f4f7fb;
+}
+
+/* LOGIN */
+
+.login{
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.login__card{
+    width:320px;
+    background:white;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 8px 25px rgba(0,0,0,0.1);
+}
+
+.login__title{
+    text-align:center;
+    font-size:32px;
+    font-weight:bold;
+    color:#1e3a8a;
+    margin-bottom:25px;
+}
+
+.login__input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:10px;
+    margin-bottom:15px;
+    box-sizing:border-box;
+    font-size:18px;
+}
+
+.login__button{
+    width:100%;
+    background:#1e3a8a;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:18px;
+}
+
+/* DASHBOARD */
+
+.dashboard__header{
+    background:#1e3a8a;
+    color:white;
+    padding:15px;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.dashboard__container{
+    padding:15px;
+}
+
+.dashboard__stats-grid{
+    display:grid;
+    grid-template-columns:
+    repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+}
+
+.dashboard__stat-card{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+
+.dashboard__filter-card{
+    background:white;
+    padding:15px;
+    border-radius:15px;
+    margin-top:15px;
+    margin-bottom:15px;
+}
+
+.dashboard__filter-button{
+    background:#1e3a8a;
+    color:white;
+    border:none;
+    padding:10px 15px;
+    border-radius:10px;
+    margin-right:10px;
+    cursor:pointer;
+}
+
+/* TASK CARD */
+
+.task-card{
+    background:white;
+    border-radius:15px;
+    padding:15px;
+    margin-bottom:15px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+.task-card__top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:15px;
+}
+
+.task-card__title{
+    margin:0;
+    color:#1e3a8a;
+}
+
+.task-card__machine{
+    color:#666;
+}
+
+.task-card__details{
+    display:grid;
+    grid-template-columns:
+    repeat(auto-fit,minmax(150px,1fr));
+    gap:10px;
+}
+
+.task-card__detail-box{
+    background:#f4f7fb;
+    padding:10px;
+    border-radius:10px;
+}
+
+.task-card__badge{
+    padding:6px 12px;
+    border-radius:20px;
+    color:white;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.task-card__badge--pending{
+    background:orange;
+}
+
+.task-card__badge--completed{
+    background:green;
+}
+
+.hidden{
+    display:none;
+}
