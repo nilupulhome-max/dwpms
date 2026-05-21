@@ -65,10 +65,6 @@ body{
     padding:15px;
     font-size:22px;
     font-weight:bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
 }
 
 .dashboard__container{
@@ -122,20 +118,6 @@ body{
 
     flex:1;
     min-width:140px;
-}
-.header-title {
-    font-size: 24px;
-    font-weight: bold;
-}
-
-.navbar {
-    display: flex;
-    align-items: center;
-}
-
-.logo {
-    height: 45px;
-    width: auto;
 }
 
 /* TASK CARD DASHBOARD */
