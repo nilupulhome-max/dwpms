@@ -121,6 +121,38 @@ body{
     flex:1;
     min-width:140px;
 }
+/* HOVER */
+
+.dashboard__filter-button:hover{
+
+    background: #1e88e5;
+    color: white;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.15);
+
+}
+
+/*    ACTIVE BUTTON */
+
+.dashboard__filter-button.active{
+
+  
+    background: #1565c0;
+    color: white;
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.15);
+
+}
+/* CLICK EFFECT */
+.dashboard__filter-button:active{
+
+    transform: scale(0.97);
+
+}
+
 /* LEFT SIDE (logo + text close together) */
 .header-left {
     display: flex;

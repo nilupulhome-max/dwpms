@@ -127,15 +127,47 @@ document.getElementById(
 // LOAD TASKS
 // =====================================
 
-async function loadTasks(filterType){
+async function loadTasks(
+    filterType,
+    clickedButton
+){
 
     console.log("Loading:", filterType);
 
-    const { data, error } =
-        await supabaseClient
+    // =====================================
+    // ACTIVE FILTER BUTTON
+    // =====================================
+
+    document
+        .querySelectorAll(
+            '.dashboard__filter-button'
+        )
+        .forEach(btn =>
+            btn.classList.remove('active')
+        );
+
+    if(clickedButton){
+
+        clickedButton.classList.add('active');
+
+    }
+
+    // =====================================
+    // LOAD DATA FROM SUPABASE
+    // =====================================
+
+    const {
+        data,
+        error
+    } =
+    await supabaseClient
         .from('maintenance_plan')
         .select('*')
         .order('planned_date');
+
+    // =====================================
+    // ERROR CHECK
+    // =====================================
 
     if(error){
 
@@ -148,7 +180,15 @@ async function loadTasks(filterType){
 
     console.log(data);
 
+    // =====================================
+    // RENDER DASHBOARD STATS
+    // =====================================
+
     renderDashboardStats(data);
+
+    // =====================================
+    // DATE CALCULATIONS
+    // =====================================
 
     const todayDate =
         new Date();
@@ -161,9 +201,14 @@ async function loadTasks(filterType){
         (6 - todayDate.getDay())
     );
 
+    // =====================================
+    // FILTER TASKS
+    // =====================================
+
     let filteredTasks = [];
 
     // THIS WEEK PENDING
+
     if(filterType === 'weekPending'){
 
         filteredTasks =
@@ -172,28 +217,44 @@ async function loadTasks(filterType){
                 const plannedDate =
                     new Date(task.planned_date);
 
-                return task.status === 'Pending'
+                return (
+                    task.status === 'Pending'
                     &&
-                    plannedDate <= currentWeekEndDate;
+                    plannedDate <=
+                    currentWeekEndDate
+                );
+
             });
+
     }
 
     // ALL PENDING
-    else if(filterType === 'allPending'){
+
+    else if(
+        filterType === 'allPending'
+    ){
 
         filteredTasks =
             data.filter(task =>
                 task.status === 'Pending'
             );
+
     }
 
     // ALL TASKS
+
     else{
 
         filteredTasks = data;
+
     }
 
+    // =====================================
+    // RENDER TASK CARDS
+    // =====================================
+
     renderTaskCards(filteredTasks);
+
 }
 
 // =====================================
@@ -241,6 +302,8 @@ function renderDashboardStats(taskData){
     document.getElementById(
         'dashboardCompletedCount'
     ).innerText = totalCompletedCount;
+
+    
 }
 
 // =====================================
