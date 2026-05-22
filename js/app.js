@@ -29,7 +29,7 @@ const appUsers = {
 
 function loginUser(){
 
-    const usernameValue =
+   /* const usernameValue =
         document.getElementById(
             'loginUsernameInput'
         ).value;
@@ -55,7 +55,27 @@ function loginUser(){
 
         alert('Invalid Username');
 
+    }*/
+const { data, error } =
+        await supabase.auth.signInWithPassword({
+
+        email: 'nilupul@nsofts.uk',
+        password: '123456'
+
+    });
+
+    if (error) {
+        alert(error.message);
+    } else {
+        alert('Login success');
     }
+
+    const { data, error } = await supabase
+    .from('maintenance')
+    .select('*');
+
+console.log(data);
+
 }
 
 // =====================================
