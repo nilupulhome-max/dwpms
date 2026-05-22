@@ -59,8 +59,6 @@ const appUsers = {
 }}*/
 async function loginUser(){
 
-     // GET INPUT VALUES
-
     const emailValue =
         document.getElementById(
             'loginUsernameInput'
@@ -71,11 +69,11 @@ async function loginUser(){
             'loginPasswordInput'
         ).value;
 
-    // LOGIN
+    console.log(emailValue);
 
     const {
-        data: loginData,
-        error: loginError
+        data,
+        error
     } =
     await supabaseClient.auth.signInWithPassword({
 
@@ -84,16 +82,17 @@ async function loginUser(){
 
     });
 
-    // LOGIN FAILED
+    if(error){
 
-    if(loginError){
+        console.log(error);
 
-        alert(loginError.message);
+        alert(error.message);
+
         return;
 
     }
 
-    // LOGIN SUCCESS
+    alert('Login Success');
 
     document
         .getElementById('loginScreen')
@@ -102,18 +101,6 @@ async function loginUser(){
     document
         .getElementById('dashboardScreen')
         .classList.remove('hidden');
-
-    // LOAD DATA
-
-    const {
-        data: maintenanceData,
-        error: maintenanceError
-    } =
-    await supabaseClient
-        .from('maintenance')
-        .select('*');
-
-    console.log(maintenanceData);
 
 }
 
