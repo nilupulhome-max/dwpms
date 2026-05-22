@@ -151,6 +151,11 @@ body{
     width: auto;
 }
 
+.user-info{
+    font-size:14px;
+    font-weight:600;
+}
+
 /* TASK CARD DASHBOARD */
 
 .task-row{

@@ -102,6 +102,22 @@ async function loginUser(){
         .getElementById('dashboardScreen')
         .classList.remove('hidden');
 
+// GET LOGGED USER EMAIL
+
+const {
+    data: { user }
+} =
+await supabaseClient.auth.getUser();
+
+// SHOW USER NAME
+
+const username =
+    user.email.split('@')[0];
+
+document.getElementById(
+    'loggedUserName'
+).innerText = username;
+
 }
 
 
