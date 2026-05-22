@@ -12,6 +12,17 @@ supabase.createClient(
     SUPABASE_ANON_KEY
 );
 
+// =============================
+// GLOBAL VARIABLES
+// =============================
+
+let currentPlanId;
+let currentMachineCategory;
+let currentMachineNo;
+let currentUser;
+
+let checklistResults = [];
+
 // =====================================
 // USERS
 // =====================================
@@ -124,6 +135,7 @@ const username =
 document.getElementById(
     'loggedUserName'
 ).innerText = username;
+currentUser = username;
 
 }
 
@@ -317,49 +329,27 @@ function renderDashboardStats(taskData){
 
 function renderTaskCards(taskData){
 
-    const taskListContainer =
-        document.getElementById(
-            'dashboardTaskList'
-        );
+    const container =
+        document.getElementById('dashboardTaskList');
 
-    taskListContainer.innerHTML = '';
+    container.innerHTML = '';
 
     taskData.forEach(taskItem => {
 
-        const plannedDate =
-            new Date(taskItem.planned_date);
+        container.innerHTML += `
 
-        const weekStartDate =
-            new Date(plannedDate);
+        <div class="task-row"
+            onclick="openChecklist(
+                '${taskItem.planid || taskItem.plan_id}',
+                '${taskItem.machine_category || ''}',
+                '${taskItem.machine_no || ''}'
+            )">
 
-        weekStartDate.setDate(
-            plannedDate.getDate() -
-            plannedDate.getDay()
-        );
-
-        const weekEndDate =
-            new Date(weekStartDate);
-
-        weekEndDate.setDate(
-            weekStartDate.getDate() + 6
-        );
-
-        const weekRangeText =
-            weekStartDate.toLocaleDateString()
-            +
-            ' - '
-            +
-            weekEndDate.toLocaleDateString();
-
-        taskListContainer.innerHTML += `
-
-        <div class="task-row">
-
-            <!-- LEFT SIDE -->
+            <!-- LEFT -->
             <div class="task-row__left">
 
                 <div class="task-row__title">
-                    ${taskItem.planid}
+                    ${taskItem.planid || taskItem.plan_id}
                 </div>
 
                 <div class="task-row__machine">
@@ -372,15 +362,11 @@ function renderTaskCards(taskData){
             <div class="task-row__center">
 
                 <div class="task-row__service">
-                    ${taskItem.service_type}
+                    ${taskItem.service_type || ''}
                 </div>
 
                 <div class="task-row__week">
-                    Week : ${taskItem.year_week}
-                </div>
-
-                <div class="task-row__range">
-                    ${weekRangeText}
+                    Week : ${taskItem.year_week || ''}
                 </div>
 
             </div>
@@ -388,12 +374,10 @@ function renderTaskCards(taskData){
             <!-- RIGHT -->
             <div class="task-row__right">
 
-                <span class="
-                    task-row__badge
+                <span class="task-row__badge
                     ${taskItem.status === 'Completed'
                         ? 'task-row__badge--completed'
-                        : 'task-row__badge--pending'}
-                ">
+                        : 'task-row__badge--pending'}">
 
                     ${taskItem.status}
 
@@ -402,6 +386,270 @@ function renderTaskCards(taskData){
             </div>
 
         </div>
+
         `;
     });
 }
+
+// =====================================
+// CHECEK LIST
+// =====================================
+const checklistItems = [
+
+"උෂ්ණත්ව මීටරයේ ක්‍රියාකාරීත්වය හා නිරවද්‍යතාවය",
+"කාලය සටහන් කිරීමේ මීටරයේ ක්‍රියාකාරීත්වය හා නිරවද්‍යතාවය",
+"ජල මීටරයේ ක්‍රියාකාරීත්වය හා නිරවද්‍යතාවය",
+"සයිරනය නියමිත පරිදි ක්‍රියාත්මක වේ",
+"දොර මුද්‍රාව හොඳ තත්වයේ පවතී",
+"හයිඩ්‍රොලික් තෙල් මට්ටම නිසියාකාරව පවතී",
+"යන්ත්‍රයට වාෂ්ප සපයන නළ නිසියාකාරව පවතී",
+"බෙල්ට් සහ වේන් වල තත්වය යහපත් වේ",
+"ජලය සපයන නළ වල තත්වය යහපත් වේ",
+"කුමන හෝ ලිහිසි තෙල් කාන්දුවක් නොමැත",
+"සොලනොයිඩ් වල ක්‍රියාකාරීත්වය යහපත් වේ",
+"යන්ත්‍රයේ කොටස්වල අනවශ්‍ය දෙදරීමක් නොමැත",
+"මෝටරයේ සහ ගියර් පෙට්ටියේ තත්වය යහපත් වේ",
+"පුලි වල තත්වය යහපත් වේ",
+"යන්ත්‍රයේ ඩ්‍රම් එක පළුඳු වලින් තොර වේ",
+"වායු සිලින්ඩරවල ක්‍රියාකාරීත්වය යහපත් වේ",
+"ජලය පිටකරනු ලබන වෑල්වය",
+"යන්ත්‍රයේ පිරිසිදු බව හා දුහුවිලිවලින් තොරවීම",
+"යන්ත්‍රයේ අදාල කොටස් ග්‍රීස් කිරීම",
+"යන්ත්‍රයේ අසාමාන්‍ය ශබ්ද නොමැත",
+"විදුලි පරිපථය අගුළු දා ඇත",
+"වලනය වන කොටස් ආරක්ෂිතව ආවරණය කර ඇත",
+"ආරක්ෂිත දොර අගුල නියමිත ආකාරයට ක්‍රියාත්මක වේ",
+"ආරක්ෂිත සංඥා හා උපදෙස් පුවරු ස්ථාපනය කර ඇත"
+
+];
+
+function openChecklist(planId, category, machineNo){
+
+    console.log("Opening checklist:", planId);
+
+    currentPlanId = planId;
+    currentMachineCategory = category;
+    currentMachineNo = machineNo;
+
+    // HIDE TASK LIST
+    document
+        .getElementById('taskListScreen')
+        .classList.add('hidden');
+
+    // SHOW CHECKLIST SCREEN
+    document
+        .getElementById('checklistScreen')
+        .classList.remove('hidden');
+
+    // =====================================
+    // RENDER CHECKLIST UI (MISSING PART)
+    // =====================================
+
+    const container =
+        document.getElementById('checklistContainer');
+
+    container.innerHTML = '';
+
+    checklistItems.forEach((item, index) => {
+
+        container.innerHTML += `
+        
+        <div class="check-row">
+
+            <!-- QUESTION -->
+    <div class="check-text">
+        ${item}
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="check-bottom">
+
+        <!-- BUTTONS -->
+        <div class="check-buttons">
+
+            <button class="btn-yes"
+                onclick="setResult(${index}, 'YES', this)">
+                YES
+            </button>
+
+            <button class="btn-no"
+                onclick="setResult(${index}, 'NO', this)">
+                NO
+            </button>
+
+            <button class="btn-na"
+                onclick="setResult(${index}, 'N/A', this)">
+                N/A
+            </button>
+
+        </div>
+
+        <!-- COMMENT -->
+        <div class="check-comment">
+
+            <input type="text"
+                id="comment_${index}"
+                placeholder="Comment">
+
+        </div>
+
+    </div>
+        `;
+
+    });
+}
+function setResult(index, value, clickedButton){
+
+    checklistResults[index] = {
+        attribute_name: checklistItems[index],
+        result_value: value
+    };
+
+    const parent =
+        clickedButton.parentElement;
+
+    parent.querySelectorAll('button')
+        .forEach(btn =>
+            btn.classList.remove('active')
+        );
+
+    clickedButton.classList.add('active');
+}
+
+function backToTasks(){
+
+    document
+        .getElementById('checklistScreen')
+        .classList.add('hidden');
+
+    document
+        .getElementById('taskListScreen')
+        .classList.remove('hidden');
+
+}
+
+
+async function saveChecklist(){
+
+    console.log("Saving checklist...");
+
+    try {
+
+        // =========================
+        // PREPARE ALL ROWS
+        // =========================
+
+        let rowsToInsert = [];
+
+        for(let i = 0; i < checklistItems.length; i++){
+
+            const comment =
+                document.getElementById(
+                    `comment_${i}`
+                )?.value || '';
+
+            const result =
+                checklistResults[i]?.result_value || 'N/A';
+
+            rowsToInsert.push({
+
+                plan_id: currentPlanId,
+
+                machine_category: currentMachineCategory,
+
+                machine_no: currentMachineNo,
+
+                technician: currentUser,
+
+                attribute_name: checklistItems[i],
+
+                result_value: result,
+
+                comments: comment,
+
+                status: 'Completed',
+
+                is_synced: false
+
+            });
+
+        }
+
+        // =========================
+        // INSERT ALL AT ONCE
+        // =========================
+
+        const {
+            error: insertError
+        } =
+        await supabaseClient
+            .from('maintenance_actual')
+            .insert(rowsToInsert);
+
+        // =========================
+        // INSERT FAILED
+        // =========================
+
+        if(insertError){
+
+            console.log(insertError);
+
+            alert(insertError.message);
+
+            return;
+        }
+
+        // =========================
+        // UPDATE PLAN STATUS
+        // =========================
+
+        const {
+            error: updateError
+        } =
+        await supabaseClient
+            .from('maintenance_plan')
+            .update({
+                status: 'Completed'
+            })
+            .eq('planid', currentPlanId);
+
+        // =========================
+        // UPDATE FAILED
+        // =========================
+
+        if(updateError){
+
+            console.log(updateError);
+
+            alert(updateError.message);
+
+            return;
+        }
+
+        // =========================
+        // SUCCESS
+        // =========================
+
+        alert("Checklist Saved Successfully!");
+
+        document
+            .getElementById('checklistScreen')
+            .classList.add('hidden');
+
+        document
+            .getElementById('taskListScreen')
+            .classList.remove('hidden');
+
+        loadTasks('weekPending');
+
+    }
+    catch(err){
+
+        console.log(err);
+
+        alert(err.message);
+
+    }
+
+}
+
