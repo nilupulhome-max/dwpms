@@ -102,7 +102,12 @@ async function loginUser(){
         .getElementById('dashboardScreen')
         .classList.remove('hidden');
 
- loadTasks('weekPending');
+ loadTasks(
+    'weekPending',
+    document.querySelector(
+        '.dashboard__filter-button'
+    )
+);
 
 // GET LOGGED USER EMAIL
 
