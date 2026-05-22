@@ -27,9 +27,9 @@ const appUsers = {
 // LOGIN
 // =====================================
 
-function loginUser(){
+ /*function loginUser(){
 
-   /* const usernameValue =
+   const usernameValue =
         document.getElementById(
             'loginUsernameInput'
         ).value;
@@ -55,28 +55,68 @@ function loginUser(){
 
         alert('Invalid Username');
 
-    }*/
-const { data, error } =
-        await supabase.auth.signInWithPassword({
+    
+}}*/
+async function loginUser(){
 
-        email: 'nilupul@nsofts.uk',
-        password: '123456'
+     // GET INPUT VALUES
+
+    const emailValue =
+        document.getElementById(
+            'loginUsernameInput'
+        ).value;
+
+    const passwordValue =
+        document.getElementById(
+            'loginPasswordInput'
+        ).value;
+
+    // LOGIN
+
+    const {
+        data: loginData,
+        error: loginError
+    } =
+    await supabaseClient.auth.signInWithPassword({
+
+        email: emailValue,
+        password: passwordValue
 
     });
 
-    if (error) {
-        alert(error.message);
-    } else {
-        alert('Login success');
+    // LOGIN FAILED
+
+    if(loginError){
+
+        alert(loginError.message);
+        return;
+
     }
 
-    const { data, error } = await supabase
-    .from('maintenance')
-    .select('*');
+    // LOGIN SUCCESS
 
-console.log(data);
+    document
+        .getElementById('loginScreen')
+        .classList.add('hidden');
+
+    document
+        .getElementById('dashboardScreen')
+        .classList.remove('hidden');
+
+    // LOAD DATA
+
+    const {
+        data: maintenanceData,
+        error: maintenanceError
+    } =
+    await supabaseClient
+        .from('maintenance')
+        .select('*');
+
+    console.log(maintenanceData);
 
 }
+
 
 // =====================================
 // LOAD TASKS
