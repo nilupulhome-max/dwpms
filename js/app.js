@@ -92,7 +92,7 @@ async function loginUser(){
 
     }
 
-    alert('Login Success');
+   // alert('Login Success');
 
     document
         .getElementById('loginScreen')
@@ -101,6 +101,8 @@ async function loginUser(){
     document
         .getElementById('dashboardScreen')
         .classList.remove('hidden');
+
+ loadTasks('weekPending');
 
 // GET LOGGED USER EMAIL
 
