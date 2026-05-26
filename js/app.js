@@ -528,7 +528,35 @@ function backToTasks(){
 
 }
 
+function selectChecklistResult(
+    index,
+    value,
+    clickedButton
+){
 
+    // REMOVE ACTIVE
+    document
+        .querySelectorAll(
+            `.group_${index}`
+        )
+        .forEach(btn =>
+            btn.classList.remove('active')
+        );
+
+    // FORCE MOBILE REPAINT
+    void clickedButton.offsetWidth;
+
+    // ADD ACTIVE
+    clickedButton.classList.add('active');
+
+    // SAVE RESULT
+    checklistResults[index] = {
+
+        result_value: value
+
+    };
+
+}
 async function saveChecklist(){
 
     console.log("Saving checklist...");

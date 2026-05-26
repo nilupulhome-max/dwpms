@@ -368,7 +368,7 @@ body{
 .btn-yes.active{
     background: #28a745;
     color: white;
-    border-color: #28a745;
+    border-color: hsl(134, 61%, 41%);
 }
 
 .btn-no.active{
@@ -379,8 +379,35 @@ body{
 
 .btn-na.active{
     background: #6c757d;
-    color: white;
+    color: rgb(255, 255, 255);
     border-color: #6c757d;
+}
+
+/* ACTIVE + HOVER */
+
+.btn-yes.active:hover{
+
+    background-color: #28a745 !important;
+
+}
+
+.btn-no.active:hover{
+
+    background-color: #dc3545 !important;
+
+}
+
+.btn-na.active:hover{
+
+    background-color: #6c757d !important;
+
+}
+.checklist-option-btn{
+
+    -webkit-tap-highlight-color: transparent;
+
+    touch-action: manipulation;
+
 }
 
 /* =========================
