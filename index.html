@@ -55,60 +55,58 @@
         </div>
 
     </div>
-
-    <!-- USER NAME -->
-<div class="user-info">
-
-    Logged in as:
-    <span id="loggedUserName"></span>
-
-</div>
+   
     <!-- DASHBOARD -->
-    <div id="dashboardScreen"
-         class="dashboard hidden">
+  <!-- DASHBOARD -->
+<div id="dashboardScreen"
+     class="dashboard hidden">
 
-        <!-- HEADER -->
-        <div class="dashboard__header">
+    <!-- HEADER -->
+    <div class="dashboard__header">
 
-             <div class="header-left">
-        <img src="images/dwlogo.svg" alt="dwlogo" class="logo">
+        <!-- LEFT -->
+        <div class="header-left">
 
-             <span class="header-title">
-            Preventive Maintenance Schedule
-        </span>
-    </div>
-             <!-- <div class="header-right">
-    <img src="images/nsoftlogo.svg" alt="nsoftlogo" class="logo">
-    </div>
-        <div class="header-right">
+            <img src="images/dwlogo.svg"
+                 alt="dwlogo"
+                 class="logo">
 
-    <div id="loggedUserName"
-         class="logged-user">
+            <span class="header-title">
 
-        User
+                Preventive Maintenance Schedule
 
-    </div>-->
-
-    <button class="logout-button"
-            onclick="logoutUser()">
-
-        Logout
-
-    </button>
-
-    <img src="images/nsoftlogo.svg"
-         alt="nsoftlogo"
-         class="logo">
-
-    </div>
-    
+            </span>
 
         </div>
 
-        <div class="dashboard__container">
+        <!-- RIGHT -->
+        <div class="header-right">
+
+            <div class="logged-user">
+                Logged in as :
+                <span id="loggedUserName"></span>
+
+            </div>
+
+            <button class="logout-button"
+                    onclick="logoutUser()">
+
+                Logout
+
+            </button>
+
+            <img src="images/nsoftlogo.svg"
+                 alt="nsoftlogo"
+                 class="logo">
+
+        </div>
+
+    </div>
+
+    <!-- DASHBOARD CONTAINER -->
+    <div class="dashboard__container">
 
             <!-- STATS -->
-            <div class="dashboard__container">
 
     <!-- STATS -->
     <div class="dashboard__stats-grid">

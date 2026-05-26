@@ -277,6 +277,13 @@ body{
     font-size:13px;
     margin-bottom:3px;
 }
+.task-row__category{
+
+    font-size: 13px;
+    color: #546e7a;
+    margin-top: 4px;
+
+}
 
 .task-row__range{
     color:#777;

@@ -139,26 +139,7 @@ currentUser = username;
 
 }
 
-// =====================================
-// LOGOUT
-// =====================================
 
-async function logoutUser(){
-
-    await supabaseClient.auth.signOut();
-
-    document
-        .getElementById('dashboardScreen')
-        .classList.add('hidden');
-
-    document
-        .getElementById('loginScreen')
-        .classList.remove('hidden');
-
-}
-document
-    .getElementById('loggedUserName')
-    .innerText = currentUser;
 // =====================================
 // LOAD TASKS
 // =====================================
@@ -373,6 +354,10 @@ function renderTaskCards(taskData){
 
                 <div class="task-row__machine">
                     Machine : ${taskItem.machine_no}
+                </div>
+
+                 <div class="task-row__machine">
+                    Machine : ${taskItem.machine_category}
                 </div>
 
             </div>
