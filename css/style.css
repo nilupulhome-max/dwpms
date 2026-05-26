@@ -56,7 +56,21 @@ body{
     cursor:pointer;
     font-size:18px;
 }
+@media (max-width: 768px){
 
+    .logged-user{
+
+        max-width: 120px;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+
+        white-space: nowrap;
+
+    }
+
+}
 /* DASHBOARD */
 
 .dashboard__header{
