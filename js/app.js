@@ -139,7 +139,26 @@ currentUser = username;
 
 }
 
+// =====================================
+// LOGOUT
+// =====================================
 
+async function logoutUser(){
+
+    await supabaseClient.auth.signOut();
+
+    document
+        .getElementById('dashboardScreen')
+        .classList.add('hidden');
+
+    document
+        .getElementById('loginScreen')
+        .classList.remove('hidden');
+
+}
+document
+    .getElementById('loggedUserName')
+    .innerText = currentUser;
 // =====================================
 // LOAD TASKS
 // =====================================
