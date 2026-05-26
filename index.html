@@ -36,7 +36,7 @@
             <input type="text"
                    id="loginUsernameInput"
                    class="login__input"
-                   placeholder="Username">
+                   placeholder="Email">
 
             <input type="password"
                    id="loginPasswordInput"
@@ -163,22 +163,46 @@
 
 </div>
 
-<!-- CHECK LIST SCREEN -->
 
+<!-- CHECKLIST SCREEN -->
+<div id="checklistScreen"
+     class="checklist-screen hidden">
 
-<div id="checklistScreen" class="hidden">
+    <!-- TOP BAR -->
+    <div class="checklist-topbar">
 
-    <h2>Checklist</h2>
+        <button class="back-button"
+                onclick="backToTasks()">
 
-    <div id="checklistContainer"></div>
+            ← Back
 
-    <button onclick="saveChecklist()">
-        Save
-    </button>
+        </button>
 
-    <button onclick="backToTasks()">
-        Back
-    </button>
+        <div class="checklist-title">
+
+            Maintenance Checklist
+
+        </div>
+
+    </div>
+
+    <!-- CHECKLIST ITEMS -->
+    <div id="checklistContainer"
+         class="checklist-container">
+
+    </div>
+
+    <!-- BOTTOM ACTION BAR -->
+    <div class="checklist-bottom-bar">
+
+        <button class="save-button"
+                onclick="saveChecklist()">
+
+            Save Checklist
+
+        </button>
+
+    </div>
 
 </div>
 
@@ -188,10 +212,6 @@
 
 </div>
 
-<!-- SAVE BTN CHECKLIST-->
-<button class="save-btn" onclick="saveChecklist()">
-    Save Checklist
-</button>
 
 <!-- TASK LIST -->
             <div id="dashboardTaskList">

@@ -397,29 +397,162 @@ body{
 
 }
 
-/* =========================
-   Save button checklist
-========================= */
+/* =====================================
+   CHECKLIST SCREEN
+===================================== */
 
-.save-btn{
+.checklist-screen{
 
-    width: 100%;
-    padding: 10px;
-    margin-top: 15px;
-    background: #1e88e5;
+    padding: 15px;
+    background: #f4f7fb;
+    min-height: 100vh;
+
+}
+
+/* =====================================
+   TOP BAR
+===================================== */
+
+.checklist-topbar{
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: linear-gradient(
+        135deg,
+        #1565c0,
+        #1976d2
+    );
+
     color: white;
+
+    padding: 14px 18px;
+
+    border-radius: 14px;
+
+    margin-bottom: 15px;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.15);
+
+}
+
+.checklist-title{
+
+    font-size: 18px;
+    font-weight: 700;
+
+}
+
+/* =====================================
+   BACK BUTTON
+===================================== */
+
+.back-button{
+
+    background: white;
+    color: #1565c0;
+
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
+
+    padding: 10px 16px;
+
+    border-radius: 10px;
+
     font-weight: 600;
+
     cursor: pointer;
+
     transition: 0.2s;
 
 }
 
-.save-btn:hover{
+.back-button:hover{
 
-    background: #1565c0;
     transform: translateY(-2px);
+
+    box-shadow:
+        0 4px 10px rgba(0,0,0,0.15);
+
+}
+
+/* =====================================
+   CHECKLIST CONTAINER
+===================================== */
+
+.checklist-container{
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+}
+
+/* =====================================
+   SAVE BAR
+===================================== */
+
+.checklist-bottom-bar{
+
+    position: sticky;
+    bottom: 0;
+
+    background: white;
+
+    padding: 15px;
+
+    margin-top: 20px;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 -4px 12px rgba(0,0,0,0.08);
+
+}
+
+/* =====================================
+   SAVE BUTTON
+===================================== */
+
+.save-button{
+
+    width: 100%;
+
+    background: linear-gradient(
+        135deg,
+        #2e7d32,
+        #43a047
+    );
+
+    color: white;
+
+    border: none;
+
+    padding: 16px;
+
+    border-radius: 14px;
+
+    font-size: 16px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.15);
+
+}
+
+.save-button:hover{
+
+    transform: translateY(-2px);
+
+}
+
+.save-button:active{
+
+    transform: scale(0.98);
 
 }
