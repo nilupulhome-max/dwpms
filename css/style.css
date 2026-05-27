@@ -56,33 +56,99 @@ body{
     cursor:pointer;
     font-size:18px;
 }
-@media (max-width: 768px){
 
-    .logged-user{
-
-        max-width: 120px;
-
-        overflow: hidden;
-
-        text-overflow: ellipsis;
-
-        white-space: nowrap;
-
-    }
-
-}
 /* DASHBOARD */
-
 .dashboard__header{
     background:#1e3a8a;
     color:white;
-    display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 10px 15px;
     flex-wrap: wrap; /* important */
 }
 
+/* TOP ROW */
+
+.header-top{
+    text-align:center;
+
+    margin-bottom:10px;
+}
+
+/* LEFT SIDE (logo + text close together) */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;/* 👈 controls closeness */
+    flex: 1;
+    min-width: 0; 
+}
+
+/* RIGHT SIDE */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+ 
+    
+}
+/*LOGOUT BUTTON*/
+
+.logout-button{
+
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+
+}
+
+.logout-button:hover{
+
+    background: #c82333;
+
+}
+
+.logout-button:active{
+
+    transform: scale(0.96);
+
+}
+/* TITLE */
+.header-title {
+    font-size:18px;
+    font-weight:bold;
+    font-weight: 600;
+    white-space: normal;   /* allow wrap */
+    word-break: break-word;
+     /*  text-align: center;   /* ✅ this is what you need */
+
+}
+
+.logo {
+    height: 38px;
+    width: auto;
+      margin-left: 5px;
+}
+
+.user-info{
+    font-size:14px;
+    font-weight:600;
+}
+
+.header-bottom{
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
 .dashboard__container{
     padding:5px;
 }
@@ -131,22 +197,17 @@ body{
     border-radius:10px;
     cursor:pointer;
     font-weight:bold;
-
     flex:1;
     min-width:140px;
 }
 /* HOVER */
-
 .dashboard__filter-button:hover{
 
     background: #1e88e5;
     color: white;
-
     transform: translateY(-2px);
-
     box-shadow:
         0 4px 12px rgba(0,0,0,0.15);
-
 }
 
 /*    ACTIVE BUTTON */
@@ -167,152 +228,7 @@ body{
 
 }
 
-/* =====================================
-   HEADER
-===================================== */
 
-.dashboard__header{
-
-    background: white;
-
-    padding: 12px 15px;
-
-    border-radius: 16px;
-
-    margin-bottom: 15px;
-
-    box-shadow:
-        0 2px 10px rgba(0,0,0,0.08);
-
-}
-
-/* TOP TITLE */
-
-.header-top{
-
-    text-align: center;
-
-    margin-bottom: 10px;
-
-}
-
-/* TITLE */
-
-.header-title{
-
-    font-size: 18px;
-
-    font-weight: 700;
-
-    color: #1565c0;
-
-}
-
-/* BOTTOM ROW */
-
-.header-bottom{
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-}
-
-/* LEFT */
-
-.header-left{
-
-    display: flex;
-
-    align-items: center;
-
-}
-
-/* RIGHT */
-
-.header-right{
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-}
-
-/* LOGO */
-
-.logo{
-
-    height: 38px;
-
-    width: auto;
-
-}
-
-/* USER */
-
-.logged-user{
-
-    font-size: 14px;
-
-    font-weight: 600;
-
-}
-
-/* LOGOUT BUTTON */
-
-.logout-button{
-
-    background: #dc3545;
-
-    color: white;
-
-    border: none;
-
-    padding: 8px 14px;
-
-    border-radius: 10px;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-}
-
-/* MOBILE */
-
-@media (max-width: 768px){
-
-    .header-title{
-
-        font-size: 16px;
-
-    }
-
-    .header-right{
-
-        gap: 6px;
-
-    }
-
-    .logout-button{
-
-        padding: 6px 10px;
-
-        font-size: 12px;
-
-    }
-
-    .logo{
-
-        height: 30px;
-
-    }
-
-}
 
 
 /* TASK CARD DASHBOARD */
