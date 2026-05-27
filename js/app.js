@@ -38,36 +38,7 @@ const appUsers = {
 // LOGIN
 // =====================================
 
- /*function loginUser(){
-
-   const usernameValue =
-        document.getElementById(
-            'loginUsernameInput'
-        ).value;
-
-    const passwordValue =
-        document.getElementById(
-            'loginPasswordInput'
-        ).value;
-
-    if(appUsers[usernameValue] === passwordValue){
-
-        document
-            .getElementById('loginScreen')
-            .classList.add('hidden');
-
-        document
-            .getElementById('dashboardScreen')
-            .classList.remove('hidden');
-
-        loadTasks('weekPending');
-    }
-    else{
-
-        alert('Invalid Username');
-
-    
-}}*/
+ 
 async function loginUser(){
 
     const emailValue =
@@ -139,6 +110,60 @@ currentUser = username;
 
 }
 
+// =====================================
+// LOG OUT
+// =====================================
+async function logoutUser(){
+
+    const { error } =
+        await supabaseClient.auth.signOut();
+
+    if(error){
+        console.log(error);
+        alert(error.message);
+        return;
+    }
+
+    // hide dashboard
+    document.getElementById('dashboardScreen')
+        .classList.add('hidden');
+
+    // show login
+    document.getElementById('loginScreen')
+        .classList.remove('hidden');
+
+    // clear UI user text
+    document.getElementById('loggedUserName').innerText = '';
+}
+
+window.addEventListener('load', async () => {
+
+    const { data } =
+        await supabaseClient.auth.getSession();
+
+    const session = data.session;
+
+    if(session){
+
+        const user = session.user;
+
+        const username =
+            user.email.split('@')[0];
+
+        document.getElementById('loggedUserName')
+            .innerText = username;
+
+        currentUser = username;
+
+        document.getElementById('loginScreen')
+            .classList.add('hidden');
+
+        document.getElementById('dashboardScreen')
+            .classList.remove('hidden');
+
+        loadTasks('weekPending');
+    }
+});
 
 // =====================================
 // LOAD TASKS
