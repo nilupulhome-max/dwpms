@@ -125,7 +125,7 @@ body{
     font-weight: 600;
     white-space: normal;   /* allow wrap */
     word-break: break-word;
-     /*  text-align: center;   /* ✅ this is what you need */
+    text-align: center;   /* ✅ this is what you need */
 
 }
 
