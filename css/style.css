@@ -170,18 +170,15 @@ body{
     }
 
     .header-left{
-
-        width: 100%;
-        justify-content: space-between;
-        align-items: center;
+        justify-content:center;
+        width:100%;
     }
-    /* LOGO */
 
     .logo-DW{
-
         height:32px;
-        justify-content: center;
+        margin:0;
     }
+    /* LOGO */
 
 }
 .dashboard__container{
