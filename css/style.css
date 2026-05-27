@@ -134,6 +134,11 @@ body{
     width: auto;
       margin-left: 5px;
 }
+.logo-DW {
+    height: 38px;
+    width: auto;
+    margin-left: 5px;
+}
 
 .user-info{
     font-size:14px;
@@ -143,9 +148,7 @@ body{
 .header-bottom{
 
     display: flex;
-
     justify-content: space-between;
-
     align-items: center;
 
 }
@@ -155,19 +158,22 @@ body{
     .header-bottom{
 
         flex-direction: column;
-
         align-items: flex-start;
-
         gap: 10px;
     }
 
     .header-right{
 
         width: 100%;
-
         justify-content: space-between;
-
         align-items: center;
+    }
+    /* LOGO */
+
+    .logo-DW{
+
+        height:32px;
+        justify-content: space-between;
     }
 
 }
