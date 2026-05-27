@@ -78,7 +78,7 @@ body{
 /* LEFT SIDE (logo + text close together) */
 .header-left {
     display: flex;
-    align-items: center;
+    align-items: Left;
     gap: 10px;/* 👈 controls closeness */
     flex: 1;
     min-width: 0; 
@@ -87,7 +87,7 @@ body{
 /* RIGHT SIDE */
 .header-right {
     display: flex;
-    align-items: center;
+    align-items: Right;
     gap: 10px;
  
     
