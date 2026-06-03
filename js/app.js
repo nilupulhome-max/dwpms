@@ -610,7 +610,7 @@ async function saveChecklist(){
 
             rowsToInsert.push({
 
-                plan_id: currentPlanId,
+                planid: currentPlanId,
 
                 machine_category: currentMachineCategory,
 
