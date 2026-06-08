@@ -84,7 +84,8 @@ async function loginUser(){
         .getElementById('dashboardScreen')
         .classList.remove('hidden');
 
-
+// trigger plan tab load manually after login
+    document.querySelector('.dashboard__tab').click();
 
  loadTasks(
     'weekPending',
@@ -1150,11 +1151,11 @@ function renderPlanGantt(data) {
 
     // HEADER
     const thead = document.getElementById('planGanttHead');
-    let headHtml = `<tr>
-        <th class="col-sticky" style="left:0">Machine Category</th>
-        <th class="col-sticky" style="left:140px">Machine</th>
-        <th class="col-sticky" style="left:220px">Freq</th>
-        <th class="col-sticky" style="left:270px">N</th>`;
+headHtml = `<tr>
+    <th class="col-sticky" style="left:0; background:#1a3a5c; z-index:4; min-width:70px; max-width:70px;">Category</th>
+    <th class="col-sticky" style="left:70px; background:#1a3a5c; z-index:4; min-width:50px; max-width:50px;">Machine</th>
+    <th class="col-sticky" style="left:120px; background:#1a3a5c; z-index:4; min-width:30px; max-width:30px;">Freq</th>
+    <th class="col-sticky" style="left:150px; background:#1a3a5c; z-index:4; min-width:20px; max-width:20px;">N</th>`;
 
     weeks.forEach(w => {
         const wNum = w.split('-')[1];
