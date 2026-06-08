@@ -1040,3 +1040,90 @@ body{
 .dash__number--pending   { color: #d97706; }
 .dash__number--completed { color: #16a34a; }
 .dash__number--overdue   { color: #dc2626; }
+
+.dashboard__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 12px;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+}
+
+.dashboard__tab {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    color: #888;
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+}
+.plan-grid__scroll {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+}
+
+.plan-grid__table td.col-sticky,
+.plan-grid__table th.col-sticky {
+    position: sticky;
+    z-index: 1;
+    background: #f9fafb;
+}
+
+@media (max-width: 768px) {
+    .plan-grid__table th.col-sticky:nth-child(1),
+    .plan-grid__table td.col-sticky:nth-child(1) { left: 0; min-width: 100px; max-width: 100px; font-size: 11px; }
+
+    .plan-grid__table th.col-sticky:nth-child(2),
+    .plan-grid__table td.col-sticky:nth-child(2) { left: 100px; min-width: 60px; max-width: 60px; font-size: 11px; }
+
+    .plan-grid__table th.col-sticky:nth-child(3),
+    .plan-grid__table td.col-sticky:nth-child(3) { left: 160px; min-width: 40px; max-width: 40px; font-size: 11px; }
+
+    .plan-grid__table th.col-sticky:nth-child(4),
+    .plan-grid__table td.col-sticky:nth-child(4) { left: 200px; min-width: 25px; font-size: 11px; }
+}
+@media (max-width: 768px) {
+    .plan__container {
+        padding: 12px;
+    }
+
+    .plan__card {
+        padding: 16px;
+    }
+
+    .plan__row {
+        grid-template-columns: 1fr;
+    }
+
+    .plan__row.three {
+        grid-template-columns: 1fr;
+    }
+
+    .dash__container {
+        padding: 12px;
+    }
+
+    .dash__grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dash__grid .dash__card:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .plan-confirm__table {
+        font-size: 11px;
+    }
+
+    .plan-confirm__table th,
+    .plan-confirm__table td {
+        padding: 4px 6px;
+    }
+}
