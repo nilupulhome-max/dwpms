@@ -56,138 +56,190 @@
 
     </div>
    
+
   <!-- DASHBOARD -->
-<div id="dashboardScreen"
-     class="dashboard hidden">
+<div id="dashboardScreen" class="dashboard hidden">
 
     <!-- HEADER -->
     <div class="dashboard__header">
-
-        <!-- Top -->
-            <!-- TITLE -->
         <div class="header-top">
-
-           <span class="header-title">
-                Preventive Maintenance Schedule
-            </span>
-
+            <span class="header-title">Preventive Maintenance Schedule</span>
         </div>
-        <!-- BOTTOM ROW -->
         <div class="header-bottom">
-        <!-- LEFT -->
-        <div class="header-left">
-
-             <img class="logo-DW" src="images/dwlogo.svg">
+            <div class="header-left">
+                <img class="logo-DW" src="images/dwlogo.svg">
+            </div>
+            <div class="header-right">
+                <div class="logged-user">
+                    <span id="loggedUserName"></span>
+                </div>
+                <button class="logout-button" onclick="logoutUser()">Logout</button>
+                <img src="images/nsoftlogo.svg" alt="nsoftlogo" class="logo">
+            </div>
         </div>
+    </div>
 
-        <!-- RIGHT -->
-        <div class="header-right">
+    <!-- TABS -->
+    <div class="dashboard__tabs">
+        <button class="dashboard__tab active" onclick="switchTab('plan', this)">Plan</button>
+        <button class="dashboard__tab" onclick="switchTab('Actual', this)">Actual</button>
+         <button class="dashboard__tab" onclick="switchTab('dashboard', this)">Dashboard</button>
+    </div>
 
-            <div class="logged-user">
-                <span id="loggedUserName"></span>
+    <!-- TAB: PLAN -->
+    <div id="tab-plan" class="dashboard__tab-content hidden">
+        <!-- plan content goes here later -->
+<div class="plan__container">
+
+        <!-- FORM CARD -->
+        <div class="plan__card">
+
+            <div class="plan__card-title">Create Maintenance Plan</div>
+
+            <!-- ROW 1 -->
+            <div class="plan__row">
+
+          <div class="plan__field">
+                <label class="plan__label">Machine Type</label>
+                <select id="planMachineType" class="plan__input" onchange="onMachineTypeChange()">
+                    <option value="">Select Machine Type</option>
+                </select>
+            </div>
+
+            <div class="plan__field">
+                <label class="plan__label">Machine ID</label>
+                <select id="planMachineId" class="plan__input">
+                    <option value="">Select Machine ID</option>
+                </select>
+                </div>
 
             </div>
 
-            <button class="logout-button"
-                    onclick="logoutUser()">
+            <!-- ROW 2 -->
+            <div class="plan__row">
 
-                Logout
+                <div class="plan__field">
+                    <label class="plan__label">Start Date</label>
+                    <input type="date" id="planStartDate" class="plan__input">
+                </div>
 
-            </button>
+                <div class="plan__field">
+                    <label class="plan__label">End Date</label>
+                    <input type="date" id="planEndDate" class="plan__input">
+                </div>
 
-            <img src="images/nsoftlogo.svg"
-                 alt="nsoftlogo"
-                 class="logo">
+            </div>
 
-        </div>
+            <!-- ROW 3 -->
+            <div class="plan__row">
 
+                <div class="plan__field">
+                    <label class="plan__label">Frequency (months)</label>
+                    <select id="planFrequency" class="plan__input">
+                        <option value="1">1 Month</option>
+                        <option value="2">2 Months</option>
+                        <option value="3">3 Months</option>
+                    </select>
+                </div>
+
+                <div class="plan__field">
+                    <label class="plan__label">Status</label>
+                    <select id="planStatus" class="plan__input">
+                        <option value="Planned">Planned</option>
+                        <option value="Scheduled">Scheduled</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- PREVIEW -->
+            <div id="planPreview" class="plan__preview hidden"></div>
+
+            <!-- CONFIRM BOX -->
+            <div id="planConfirmBox" class="hidden"></div>
+
+
+            <!-- BUTTONS -->
+            <div class="plan__actions">
+                <button class="plan__btn-ghost" onclick="previewAndConfirm()">Preview</button>
+                <!--<button class="plan__btn-primary" onclick="saveSchedule()">Save to Database</button>-->
+            </div>
+
+            <!-- MESSAGE -->
+            <div id="planMessage" class="plan__message hidden"></div>
+     </div>
+
+     
+
+            <!-- GANTT GRID -->
+<div class="plan-grid__wrap">
+    <div class="plan-grid__scroll">
+        <table class="plan-grid__table" id="planGanttTable">
+            <thead id="planGanttHead"></thead>
+            <tbody id="planGanttBody"></tbody>
+        </table>
     </div>
+</div>
 
-        </div>
+<!-- TOOLTIP -->
+<div id="planTooltip" class="plan-grid__tooltip hidden"></div>
 
-    <!-- DASHBOARD CONTAINER -->
-    <div class="dashboard__container">
+      </div>
+
+
+    </div> 
+
+
+    <!-- TAB: DASHBOARD Actual  -->
+<div id="tab-Actual" class="dashboard__tab-content hidden">
+
+        <!-- Actual tab CONTAINER -->
+        <div class="dashboard__container">
 
             <!-- STATS -->
-
-    <!-- STATS -->
-    <div class="dashboard__stats-grid">
-
-        <!-- TOTAL PLANNED -->
-        <div class="dashboard__stat-card">
-
-            <h2>Total Planned</h2>
-
-            <p id="dashboardPlannedCount">
-                0
-            </p>
-
-        </div>
-
-        <!-- TOTAL SCHEDULED -->
-        <div class="dashboard__stat-card">
-
-            <h2>Total Scheduled</h2>
-
-            <p id="dashboardScheduledCount">
-                0
-            </p>
-
-        </div>
-
-        <!-- PENDING -->
-        <div class="dashboard__stat-card">
-
-            <h2>Pending</h2>
-
-            <p id="dashboardPendingCount">
-                0
-            </p>
-
-        </div>
-
-        <!-- COMPLETED -->
-        <div class="dashboard__stat-card">
-
-            <h2>Completed</h2>
-
-            <p id="dashboardCompletedCount">
-                0
-            </p>
-
-        </div>
-
-    </div>
+            <div class="dashboard__stats-grid">
+                <div class="dashboard__stat-card">
+                    <h2>Total Planned</h2>
+                    <p id="dashboardPlannedCount">0</p>
+                </div>
+                <div class="dashboard__stat-card">
+                    <h2>Total Scheduled</h2>
+                    <p id="dashboardScheduledCount">0</p>
+                </div>
+                <div class="dashboard__stat-card">
+                    <h2>Pending</h2>
+                    <p id="dashboardPendingCount">0</p>
+                </div>
+                <div class="dashboard__stat-card">
+                    <h2>Completed</h2>
+                    <p id="dashboardCompletedCount">0</p>
+                </div>
+            </div>
 
             <!-- FILTERS -->
             <div class="dashboard__filter-card">
+                <button class="dashboard__filter-button" onclick="loadTasks('weekPending', this)">This Week Pending</button>
+                <button class="dashboard__filter-button" onclick="loadTasks('allPending', this)">All Pending</button>
+                <button class="dashboard__filter-button" onclick="loadTasks('all', this)">All Tasks</button>
+            </div>
 
-  <button class="dashboard__filter-button"
-        onclick="loadTasks('weekPending', this)">
-
-    This Week Pending
-
-</button>
-
-<button class="dashboard__filter-button"
+            <button class="dashboard__filter-button"
         onclick="loadTasks('allPending', this)">
 
-    All Pending
+            All Pending
 
-</button>
+                </button>
 
-<button class="dashboard__filter-button"
-        onclick="loadTasks('all', this)">
+                <button class="dashboard__filter-button"
+                        onclick="loadTasks('all', this)">
 
-    All Tasks
+                    All Tasks
 
-</button>
+                </button>
 
-</div>
-
-<!-- CHECKLIST SCREEN -->
-<div id="checklistScreen"
-     class="checklist-screen hidden">
+                <!-- CHECKLIST SCREEN -->
+            <div id="checklistScreen"
+            class="checklist-screen hidden">
 
      
     <!-- TOP BAR -->
@@ -241,6 +293,51 @@
             </div>
 
         </div>
+
+                </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- TAB: DASHBOARD -->
+<div id="tab-dashboard" class="dashboard__tab-content hidden">
+    <div class="dash__container">
+
+        <div class="dash__grid">
+
+            <div class="dash__card">
+                <div class="dash__label">Total Planned</div>
+                <div class="dash__number" id="dashTotal">0</div>
+            </div>
+
+            <div class="dash__card">
+                <div class="dash__label">Scheduled</div>
+                <div class="dash__number" id="dashScheduled">0</div>
+            </div>
+
+            <div class="dash__card">
+                <div class="dash__label">Pending</div>
+                <div class="dash__number dash__number--pending" id="dashPending">0</div>
+            </div>
+
+            <div class="dash__card">
+                <div class="dash__label">Completed</div>
+                <div class="dash__number dash__number--completed" id="dashCompleted">0</div>
+            </div>
+
+            <div class="dash__card">
+                <div class="dash__label">Overdue</div>
+                <div class="dash__number dash__number--overdue" id="dashOverdue">0</div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
 
 
     <!-- JS -->

@@ -84,6 +84,8 @@ async function loginUser(){
         .getElementById('dashboardScreen')
         .classList.remove('hidden');
 
+
+
  loadTasks(
     'weekPending',
     document.querySelector(
@@ -161,9 +163,105 @@ window.addEventListener('load', async () => {
         document.getElementById('dashboardScreen')
             .classList.remove('hidden');
 
+                       // make sure Plan tab is active on login
+    switchTab('plan', document.querySelector('.dashboard__tab'));
+
         loadTasks('weekPending');
     }
 });
+
+// =====================================
+// Tabs
+// =====================================
+function switchTab(name, btn) {
+  document.querySelectorAll('.dashboard__tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.dashboard__tab-content').forEach(t => t.classList.add('hidden'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.remove('hidden');
+
+   // load dropdowns when plan tab opens
+    if (name === 'plan') loadMachineTypes();
+    if (name === 'plan') loadPlanGantt();  // add this line
+    if (name === 'dashboard') loadDashboardStats();
+
+}
+
+async function loadDashboardStats() {
+    const { data, error } = await supabaseClient
+        .from('maintenance_plan')
+        .select('service_type, status, planned_date');
+
+    if (error) {
+        console.error('Dashboard stats error:', error.message);
+        return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const total     = data.length;
+    const scheduled = data.filter(r => r.service_type === 'Scheduled').length;
+    const pending   = data.filter(r => r.status === 'Pending').length;
+    const completed = data.filter(r => r.status === 'Completed').length;
+    const overdue   = data.filter(r => r.status === 'Pending' && r.planned_date && r.planned_date < today).length;
+
+    document.getElementById('dashTotal').textContent     = total;
+    document.getElementById('dashScheduled').textContent = scheduled;
+    document.getElementById('dashPending').textContent   = pending;
+    document.getElementById('dashCompleted').textContent = completed;
+    document.getElementById('dashOverdue').textContent   = overdue;
+}
+const machineType = document.getElementById('planMachineType').value.trim();
+const machineIdSelect = document.getElementById('planMachineId');
+const machineId = machineIdSelect.value.trim();
+const machineName = machineIdSelect.options[machineIdSelect.selectedIndex]?.getAttribute('data-name') || '';
+
+
+// =====================================
+// LOAD MACHINETYPES
+//
+async function loadMachineTypes() {
+    const { data, error } = await supabaseClient
+        .from('machinetypes')
+        .select('machineid, machine_name, machine_category');
+
+    if (error) {
+        console.error('Error loading machine types:', error.message);
+        return;
+    }
+
+    const machineTypeSelect = document.getElementById('planMachineType');
+    const machineIdSelect = document.getElementById('planMachineId');
+
+    // populate machine type (category) dropdown — unique values
+    const categories = [...new Set(data.map(d => d.machine_category))];
+    machineTypeSelect.innerHTML = '<option value="">Select Machine Type</option>';
+    categories.forEach(cat => {
+        machineTypeSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+    });
+
+    // store full data for filtering
+    window._machineData = data;
+
+    // reset machine id
+    machineIdSelect.innerHTML = '<option value="">Select Machine ID</option>';
+}
+
+function onMachineTypeChange() {
+    const selected = document.getElementById('planMachineType').value;
+    const machineIdSelect = document.getElementById('planMachineId');
+
+    machineIdSelect.innerHTML = '<option value="">Select Machine ID</option>';
+
+    if (!selected) return;
+
+    const filtered = window._machineData.filter(d => d.machine_category === selected);
+    filtered.forEach(m => {
+        machineIdSelect.innerHTML += `<option value="${m.machineid}" data-name="${m.machine_name}">${m.machineid} — ${m.machine_name}</option>`;
+    });
+}
+
+
+
 
 // =====================================
 // LOAD TASKS
@@ -708,5 +806,480 @@ async function saveChecklist(){
 
     }
 
+}
+
+
+// TAB PLAN 
+
+function getWeekNumber(date) {
+    const d = new Date(date);
+    const startOfYear = new Date(d.getFullYear(), 0, 1);
+    const week = Math.ceil(((d - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
+    return d.getFullYear() + '-' + String(week).padStart(2, '0');
+}
+
+function generateScheduleDates() {
+    const start = new Date(document.getElementById('planStartDate').value);
+    const end = new Date(document.getElementById('planEndDate').value);
+    const freq = parseInt(document.getElementById('planFrequency').value);
+
+    const dates = [];
+    let current = new Date(start);
+
+    while (current <= end) {
+        dates.push(new Date(current));
+        current.setMonth(current.getMonth() + freq);
+    }
+
+    return dates;
+}
+
+async function previewSchedule() {
+    const machineType = document.getElementById('planMachineType').value.trim();
+    const machineIdSelect = document.getElementById('planMachineId');
+    const machineId = machineIdSelect.value.trim();
+    const status = document.getElementById('planStatus').value;
+
+    if (!machineType || !machineId || !document.getElementById('planStartDate').value || !document.getElementById('planEndDate').value) {
+        showPlanMessage('Please fill in all fields before previewing.', 'error');
+        return;
+    }
+
+    const dates = generateScheduleDates();
+
+    // get next real plan id
+    const firstId = await getNextPlanId();
+    let num = parseInt(firstId.split('-')[1]);
+
+    const preview = document.getElementById('planPreview');
+
+    let html = `<table>
+        <thead>
+            <tr>
+                <th>Plan ID</th>
+                <th>Machine Type</th>
+                <th>Machine ID</th>
+                <th>Status</th>
+                <th>Scheduled Date</th>
+                <th>Week No.</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    dates.forEach(date => {
+        const planId = 'PLNNO-' + String(num++).padStart(4, '0');
+        const scheduled = date.toISOString().split('T')[0];
+        const week = getWeekNumber(date);
+        html += `<tr>
+            <td>${planId}</td>
+            <td>${machineType}</td>
+            <td>${machineId}</td>
+            <td>${status}</td>
+            <td>${scheduled}</td>
+            <td>${week}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    preview.innerHTML = html;
+    preview.classList.remove('hidden');
+}
+async function getNextPlanId() {
+    const { data, error } = await supabaseClient
+        .from('maintenance_plan')
+        .select('planid')
+        .order('planid', { ascending: false })
+        .limit(1);
+
+    if (error || !data.length) return 'PLNNO-0001';
+
+    const last = data[0].planid;
+    const num = parseInt(last.split('-')[1]) + 1;
+    return 'PLNNO-' + String(num).padStart(4, '0');
+}
+async function previewAndConfirm() {
+    const machineType = document.getElementById('planMachineType').value.trim();
+    const machineIdSelect = document.getElementById('planMachineId');
+    const machineId = machineIdSelect.value.trim();
+    const status = document.getElementById('planStatus').value;
+
+    if (!machineType || !machineId || !document.getElementById('planStartDate').value || !document.getElementById('planEndDate').value) {
+        showPlanMessage('Please fill in all fields before previewing.', 'error');
+        return;
+    }
+
+    const dates = generateScheduleDates();
+    const weeks = dates.map(d => getWeekNumber(d));
+
+    // check supabase for conflicts
+    // check conflicts — same machine OR same weeks
+const { data, error } = await supabaseClient
+    .from('maintenance_plan')
+    .select('planid, machine_no, machine_category, year_week, planned_date, service_type, status')
+    .or(`machine_no.eq.${machineId},year_week.in.(${weeks.join(',')})`);
+
+    if (error) {
+        showPlanMessage('Error checking conflicts: ' + error.message, 'error');
+        return;
+    }
+
+    // show preview table
+    const firstId = await getNextPlanId();
+    let num = parseInt(firstId.split('-')[1]);
+
+    let previewHtml = `<table>
+        <thead>
+            <tr>
+                <th>Plan ID</th>
+                <th>Machine Type</th>
+                <th>Machine ID</th>
+                <th>Status</th>
+                <th>Scheduled Date</th>
+                <th>Week No.</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+    dates.forEach(date => {
+        const planId = 'PLNNO-' + String(num++).padStart(4, '0');
+        const scheduled = date.toISOString().split('T')[0];
+        const week = getWeekNumber(date);
+        previewHtml += `<tr>
+            <td>${planId}</td>
+            <td>${machineType}</td>
+            <td>${machineId}</td>
+            <td>${status}</td>
+            <td>${scheduled}</td>
+            <td>${week}</td>
+        </tr>`;
+    });
+
+    previewHtml += '</tbody></table>';
+
+    const preview = document.getElementById('planPreview');
+    preview.innerHTML = previewHtml;
+    preview.classList.remove('hidden');
+
+    // build conflict warning
+    const confirmBox = document.getElementById('planConfirmBox');
+
+    if (data && data.length > 0) {
+        let conflictHtml = `
+            <div class="plan-confirm__warning">
+                <div class="plan-confirm__warning-title">
+                    ⚠️ Existing plans found for these weeks
+                </div>
+                <table class="plan-confirm__table">
+                    <thead>
+                        <tr>
+                            <th>Plan ID</th>
+                            <th>Machine</th>
+                            <th>Category</th>
+                            <th>Week</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                             <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+                    data.forEach(row => {
+                        const isSameMachine = row.machine_no === machineId;
+                        const isSameWeek = weeks.includes(row.year_week);
+
+                        let reason = '';
+                        if (isSameMachine && isSameWeek) reason = '⚠️ Same machine + same week';
+                        else if (isSameMachine)          reason = '🔁 Same machine, different week';
+                        else if (isSameWeek)             reason = '📅 Different machine, same week';
+
+                        conflictHtml += `<tr>
+                            <td>${row.planid}</td>
+                            <td>${row.machine_no}</td>
+                            <td>${row.machine_category}</td>
+                            <td>${row.year_week}</td>
+                            <td>${row.planned_date || '—'}</td>
+                            <td>${row.service_type}</td>
+                            <td>${row.status}</td>
+                            <td>${reason}</td>
+                        </tr>`;
+});
+
+        conflictHtml += `</tbody></table>
+                <div class="plan-confirm__question">
+                    Do you still want to add the new plan?
+                </div>
+                <div class="plan-confirm__btns">
+                    <button class="plan__btn-primary" onclick="saveSchedule()">Yes, Save Anyway</button>
+                    <button class="plan__btn-ghost" onclick="cancelConfirm()">Cancel</button>
+                </div>
+            </div>`;
+
+        confirmBox.innerHTML = conflictHtml;
+        confirmBox.classList.remove('hidden');
+
+    } else {
+        // no conflicts — show clean confirm
+        confirmBox.innerHTML = `
+            <div class="plan-confirm__clean">
+                <div class="plan-confirm__clean-title">✅ No conflicts found for these weeks.</div>
+                <div class="plan-confirm__question">Ready to save?</div>
+                <div class="plan-confirm__btns">
+                    <button class="plan__btn-primary" onclick="saveSchedule()">Yes, Save</button>
+                    <button class="plan__btn-ghost" onclick="cancelConfirm()">Cancel</button>
+                </div>
+            </div>`;
+        confirmBox.classList.remove('hidden');
+    }
+}
+
+function cancelConfirm() {
+    document.getElementById('planConfirmBox').classList.add('hidden');
+    document.getElementById('planPreview').classList.add('hidden');
+    document.getElementById('planPreview').innerHTML = '';
+    document.getElementById('planMachineType').value = '';
+    document.getElementById('planMachineId').innerHTML = '<option value="">Select Machine ID</option>';
+    document.getElementById('planStartDate').value = '';
+    document.getElementById('planEndDate').value = '';
+    document.getElementById('planFrequency').selectedIndex = 0;
+    document.getElementById('planStatus').selectedIndex = 0;
+}
+
+async function saveSchedule() {
+    const machineType = document.getElementById('planMachineType').value.trim();
+    const machineId = document.getElementById('planMachineId').value.trim();
+    const status = document.getElementById('planStatus').value;
+    const freq = parseInt(document.getElementById('planFrequency').value);
+
+    if (!machineType || !machineId || !document.getElementById('planStartDate').value || !document.getElementById('planEndDate').value) {
+        showPlanMessage('Please fill in all fields before saving.', 'error');
+        return;
+    }
+
+    const dates = generateScheduleDates();
+    const createdBy = document.getElementById('loggedUserName').textContent.trim();
+    const now = new Date().toISOString();
+
+    let nextId = await getNextPlanId();
+    let num = parseInt(nextId.split('-')[1]);
+
+    const rows = dates.map(date => {
+        const planId = 'PLNNO-' + String(num++).padStart(4, '0');
+        return {
+        planid: planId,
+        machine_category: machineType,
+        machine_no: machineId,
+        service_type: status,
+        schedule_frequency: freq,
+        year_week: getWeekNumber(date),
+        planned_date: date.toISOString().split('T')[0],
+        planned_by: createdBy,
+        created_date: now,
+        status: 'Pending',
+        is_synced: false,
+        last_modified: now
+        };
+    });
+
+    const { error } = await supabaseClient
+        .from('maintenance_plan')
+        .insert(rows);
+
+    if (error) {
+        showPlanMessage('Error saving: ' + error.message, 'error');
+    } else {
+        showPlanMessage(rows.length + ' schedule(s) saved successfully!', 'success');
+        // reset all
+    document.getElementById('planConfirmBox').classList.add('hidden');
+    document.getElementById('planPreview').classList.add('hidden');
+    document.getElementById('planPreview').innerHTML = '';
+    document.getElementById('planMachineType').value = '';
+    document.getElementById('planMachineId').innerHTML = '<option value="">Select Machine ID</option>';
+    document.getElementById('planStartDate').value = '';
+    document.getElementById('planEndDate').value = '';
+    document.getElementById('planFrequency').selectedIndex = 0;
+    document.getElementById('planStatus').selectedIndex = 0;
+
+    loadPlanGantt();
+    }
+}
+
+function showPlanMessage(msg, type) {
+    const el = document.getElementById('planMessage');
+    el.textContent = msg;
+    el.className = 'plan__message ' + type;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+
+    // Maintanance Plan grid
+async function loadPlanGantt() {
+    const { data, error } = await supabaseClient
+        .from('maintenance_plan')
+        .select('*')
+       // .eq('is_synced', true)
+        .order('machine_no', { ascending: true });
+
+    if (error) {
+        console.error('Gantt load error:', error.message);
+        return;
+    }
+
+    renderPlanGantt(data);
+}
+
+function renderPlanGantt(data) {
+    const year = new Date().getFullYear();
+    const today = new Date();
+    const currentWeek = getWeekNumber(today);
+
+    // build week columns 1 - 52
+    const weeks = Array.from({ length: 52 }, (_, i) => {
+        const w = String(i + 1).padStart(2, '0');
+        return year + '-' + w;
+    });
+
+    // group rows by machine_category + machine_no + schedule_frequency
+    const groups = {};
+    data.forEach(row => {
+        const key = row.machine_category + '||' + row.machine_no + '||' + row.schedule_frequency;
+        if (!groups[key]) groups[key] = { category: row.machine_category, machine: row.machine_no, freq: row.schedule_frequency, plans: [] };
+        groups[key].plans.push(row);
+    });
+
+    // HEADER
+    const thead = document.getElementById('planGanttHead');
+    let headHtml = `<tr>
+        <th class="col-sticky" style="left:0">Machine Category</th>
+        <th class="col-sticky" style="left:140px">Machine</th>
+        <th class="col-sticky" style="left:220px">Freq</th>
+        <th class="col-sticky" style="left:270px">N</th>`;
+
+    weeks.forEach(w => {
+        const wNum = w.split('-')[1];
+        const isCurrent = w === currentWeek;
+        headHtml += `<th style="${isCurrent ? 'border-bottom:2px solid #60a5fa;background:#254d7a' : ''}">${wNum}W</th>`;
+    });
+
+    headHtml += '</tr>';
+    thead.innerHTML = headHtml;
+
+    // BODY
+    const tbody = document.getElementById('planGanttBody');
+    let bodyHtml = '';
+
+    Object.values(groups).forEach(group => {
+        const freqLabel = group.freq + 'M';
+        const count = group.plans.length;
+
+        // map year_week -> plan
+        const weekMap = {};
+        group.plans.forEach(p => {
+            if (p.year_week) weekMap[p.year_week] = p;
+        });
+
+        bodyHtml += `<tr>
+            <td class="col-sticky" style="left:0">${group.category}</td>
+            <td class="col-sticky" style="left:140px">${group.machine}</td>
+            <td class="col-sticky" style="left:220px">${freqLabel}</td>
+            <td class="col-sticky" style="left:270px">${count}</td>`;
+
+        weeks.forEach(w => {
+            const plan = weekMap[w];
+            if (plan) {
+                const label = getCellLabel(plan, w, currentWeek);
+                const cls = getCellClass(plan, w, currentWeek);
+                const tip = encodeTooltip(plan);
+                bodyHtml += `<td><span class="plan-grid__cell ${cls}" 
+                    onmouseenter="showTooltip(event, '${tip}')" 
+                    onmouseleave="hideTooltip()">${label}</span></td>`;
+            } else {
+                bodyHtml += '<td></td>';
+            }
+        });
+
+        bodyHtml += '</tr>';
+    });
+
+    tbody.innerHTML = bodyHtml;
+
+    // scroll to current week
+    scrollToCurrentWeek(currentWeek, weeks);
+}
+
+function getCellLabel(plan, week, currentWeek) {
+    const isCompleted = plan.status === 'Completed';
+    const isPast = week < currentWeek;
+    const base = plan.service_type === 'Scheduled' ? 'S' : 'P';
+    if (isCompleted) return base + '-C';
+    return base;
+}
+
+function getCellClass(plan, week, currentWeek) {
+    const isCompleted = plan.status === 'Completed';
+    const isPast = week < currentWeek;
+    const isFuture = week > currentWeek;
+
+    if (isCompleted) return plan.service_type === 'Scheduled' ? 's-c' : 'p-c';
+    if (isPast) return 'delayed';
+    if (isFuture) return 'future';
+    return plan.service_type === 'Scheduled' ? 'scheduled' : 'planned';
+}
+
+function encodeTooltip(plan) {
+    const lines = [
+        'ID: ' + plan.planid,
+        'Machine: ' + plan.machine_no,
+        'Type: ' + plan.service_type,
+        'Scheduled: ' + (plan.planned_date || '—'),
+        'Status: ' + (plan.status || '—'),
+        'Planned by: ' + (plan.planned_by || '—'),
+        'Completed by: ' + (plan.completed_by || '—'),
+        'Completed: ' + (plan.completed_date || '—'),
+    ].join('|');
+    return encodeURIComponent(lines);
+}
+
+function showTooltip(event, encoded) {
+    const tip = document.getElementById('planTooltip');
+    const lines = decodeURIComponent(encoded).split('|');
+    tip.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+    tip.classList.remove('hidden');
+
+    const rect = event.target.getBoundingClientRect();
+
+    // position above the cell, centered
+    let left = rect.left + rect.width / 2;
+    let top = rect.top - 10;
+
+    // if too close to top, show below instead
+    if (top < 150) {
+        top = rect.bottom + 10;
+        tip.style.transform = 'translateX(-50%)';
+    } else {
+        tip.style.transform = 'translateX(-50%) translateY(-100%)';
+    }
+
+    // prevent going off right edge
+    const tipWidth = 240;
+    if (left + tipWidth / 2 > window.innerWidth) {
+        left = window.innerWidth - tipWidth / 2 - 10;
+    }
+
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+}
+
+function hideTooltip() {
+    document.getElementById('planTooltip').classList.add('hidden');
+}
+
+function scrollToCurrentWeek(currentWeek, weeks) {
+    const idx = weeks.indexOf(currentWeek);
+    if (idx === -1) return;
+    const scroll = document.querySelector('.plan-grid__scroll');
+    // each week col is approx 40px, sticky cols take ~300px
+    scroll.scrollLeft = Math.max(0, (idx * 40) - 100);
 }
 
