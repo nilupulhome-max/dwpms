@@ -73,12 +73,15 @@ body {
 }
 
 .login__title {
-    text-align: center;
-    font-size: 32px;
-    font-weight: bold;
+   text-align: center;
+    font-size: 28px;
+    font-weight: 700;
     color: #1e3a8a;
-
-    margin-bottom: 25px;
+    margin-bottom: 28px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 16px;
 }
 .nsoft__title {
     text-align: center;
@@ -134,6 +137,8 @@ body {
 .header-title {
     font-size: 20px;
     font-weight: 600;
+    font-style: italic; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     white-space: normal;
     word-break: break-word;
     text-align: center;

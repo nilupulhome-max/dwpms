@@ -1042,16 +1042,17 @@ function populateWeekDropdown(selectedWeek) {
     
     const year        = new Date().getFullYear();
     const select      = document.getElementById('editPlanWeek');
-    const currentWeekNum = parseInt(selectedWeek.split('-')[1]);
+
+    // Start from current week so user can reschedule to any remaining week
+    const currentWeekNum = parseInt(getWeekNumber(new Date()).split('-')[1]);
 
     select.innerHTML = '';
 
-    // Only show weeks from current plan week to week 52
     for (let i = currentWeekNum; i <= 52; i++) {
         const week  = String(i).padStart(2, '0');
         const value = year + '-' + week;
         const opt   = document.createElement('option');
-        opt.value   = value;
+        opt.value       = value;
         opt.textContent = value;
         if (value === selectedWeek) opt.selected = true;
         select.appendChild(opt);
