@@ -77,7 +77,16 @@ body {
     font-size: 32px;
     font-weight: bold;
     color: #1e3a8a;
+
     margin-bottom: 25px;
+}
+.nsoft__title {
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: #4501ff;
+    margin-top: 20px;
+    margin-bottom: 10px;
 }
 
 .login__input {
@@ -203,19 +212,19 @@ body {
     gap: 4px;
     padding: 0 12px;
     border-bottom: 1px solid #ddd;
-    background: #fff;
+    background: #ffffff;
 }
 
 .dashboard__tab {
     flex: 1;                /* equal width tabs */
     padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 1000;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
     cursor: pointer;
-    color: #888;
+    color: #5a5959;
     text-align: center;
     min-width: 0;           /* allows flex shrink below content width */
 }
@@ -224,6 +233,7 @@ body {
 .dashboard__tab.active {
     border-bottom-color: #1a73e8;
     color: #1a73e8;
+    background: #56eb56;
 }
 
 
