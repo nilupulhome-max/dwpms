@@ -4,35 +4,32 @@
 <head>
 
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DWPMS Maintenance App</title>
 
     <!-- CSS -->
-    <link rel="stylesheet"
-          href="css/style.css">
+    <link rel="stylesheet" href="css/style.css">
 
     <!-- SUPABASE -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <script src="js/app.js"></script>
 
 </head>
 
 <body>
 
-    <!-- LOGIN SCREEN -->
-    <div id="loginScreen"
-         class="login">
+<!-- ============================================================
+     LOGIN SCREEN
+     - Shown on page load
+     - Hidden after successful login
+============================================================ -->
+<div id="loginScreen" class="login">
 
-        <div class="login__card">
+    <div class="login__card">
 
-            <div class="login__title">
-                DWPMS Login
-            </div>
+        <div class="login__title">DWPMS Login</div>
+
         <form onsubmit="loginUser(); return false;">
+
             <input type="text"
                    id="loginUsernameInput"
                    class="login__input"
@@ -43,305 +40,348 @@
                    class="login__input"
                    placeholder="Password">
 
-            <button type="submit"
-                   class="login__button">
+            <button type="submit" class="login__button">Login</button>
 
-                Login
-
-            </button>
-
-            </form>
-
-        </div>
+        </form>
 
     </div>
-   
 
-  <!-- DASHBOARD -->
+</div>
+
+
+<!-- ============================================================
+     DASHBOARD SCREEN
+     - Hidden on page load
+     - Shown after successful login
+     - Contains: Header, Tabs, Tab Contents
+============================================================ -->
 <div id="dashboardScreen" class="dashboard hidden">
 
-    <!-- HEADER -->
+
+    <!-- --------------------------------------------------------
+         HEADER
+         - Top row: page title
+         - Bottom row: DW logo (left) | user + logout + nsoft logo (right)
+    -------------------------------------------------------- -->
     <div class="dashboard__header">
+
+        <!-- Title -->
         <div class="header-top">
             <span class="header-title">Preventive Maintenance Schedule</span>
         </div>
+
+        <!-- Logos + User -->
         <div class="header-bottom">
+
             <div class="header-left">
-                <img class="logo-DW" src="images/dwlogo.svg">
+                <img class="logo-DW" src="images/dwlogo.svg" alt="DW Logo">
             </div>
+
             <div class="header-right">
                 <div class="logged-user">
                     <span id="loggedUserName"></span>
                 </div>
                 <button class="logout-button" onclick="logoutUser()">Logout</button>
-                <img src="images/nsoftlogo.svg" alt="nsoftlogo" class="logo">
+                <img src="images/nsoftlogo.svg" alt="NSoft Logo" class="logo">
             </div>
-        </div>
-    </div>
 
-    <!-- TABS -->
+        </div>
+
+    </div>
+    <!-- END HEADER -->
+
+
+    <!-- --------------------------------------------------------
+         TAB BAR
+         - Plan: create maintenance schedules
+         - Actual: view tasks, filters, checklist
+         - Dashboard: summary stat cards
+    -------------------------------------------------------- -->
     <div class="dashboard__tabs">
         <button class="dashboard__tab active" onclick="switchTab('plan', this)">Plan</button>
-        <button class="dashboard__tab" onclick="switchTab('Actual', this)">Actual</button>
-         <button class="dashboard__tab" onclick="switchTab('dashboard', this)">Dashboard</button>
+        <button class="dashboard__tab"        onclick="switchTab('Actual', this)">Actual</button>
+        <button class="dashboard__tab"        onclick="switchTab('dashboard', this)">Dashboard</button>
     </div>
+    <!-- END TAB BAR -->
 
-    <!-- TAB: PLAN -->
+
+    <!-- ============================================================
+         TAB: PLAN
+         - Form to create new maintenance plan
+         - Preview table before saving
+         - Conflict confirmation box
+         - Gantt grid showing all plans by week
+    ============================================================ -->
     <div id="tab-plan" class="dashboard__tab-content hidden">
-        <!-- plan content goes here later -->
-<div class="plan__container">
 
-        <!-- FORM CARD -->
-        <div class="plan__card">
+        <div class="plan__container">
 
-            <div class="plan__card-title">Create Maintenance Plan</div>
 
-            <!-- ROW 1 -->
-            <div class="plan__row">
+            <!-- ------------------------------------------------
+                 PLAN FORM CARD
+            ------------------------------------------------ -->
+            <div class="plan__card">
 
-          <div class="plan__field">
-                <label class="plan__label">Machine Type</label>
-                <select id="planMachineType" class="plan__input" onchange="onMachineTypeChange()">
-                    <option value="">Select Machine Type</option>
-                </select>
-            </div>
+                <div class="plan__card-title">Create Maintenance Plan</div>
 
-            <div class="plan__field">
-                <label class="plan__label">Machine ID</label>
-                <select id="planMachineId" class="plan__input">
-                    <option value="">Select Machine ID</option>
-                </select>
+                <!-- ROW 1: Machine Type + Machine ID -->
+                <div class="plan__row">
+
+                    <div class="plan__field">
+                        <label class="plan__label">Machine Type</label>
+                        <select id="planMachineType"
+                                class="plan__input"
+                                onchange="onMachineTypeChange()">
+                            <option value="">Select Machine Type</option>
+                        </select>
+                    </div>
+
+                    <div class="plan__field">
+                        <label class="plan__label">Machine ID</label>
+                        <select id="planMachineId" class="plan__input">
+                            <option value="">Select Machine ID</option>
+                        </select>
+                    </div>
+
                 </div>
 
-            </div>
+                <!-- ROW 2: Start Date + End Date -->
+                <div class="plan__row">
 
-            <!-- ROW 2 -->
-            <div class="plan__row">
+                    <div class="plan__field">
+                        <label class="plan__label">Start Date</label>
+                        <input type="date" id="planStartDate" class="plan__input">
+                    </div>
 
-                <div class="plan__field">
-                    <label class="plan__label">Start Date</label>
-                    <input type="date" id="planStartDate" class="plan__input">
+                    <div class="plan__field">
+                        <label class="plan__label">End Date</label>
+                        <input type="date" id="planEndDate" class="plan__input">
+                    </div>
+
                 </div>
 
-                <div class="plan__field">
-                    <label class="plan__label">End Date</label>
-                    <input type="date" id="planEndDate" class="plan__input">
+                <!-- ROW 3: Frequency + Status -->
+                <div class="plan__row">
+
+                    <div class="plan__field">
+                        <label class="plan__label">Frequency (months)</label>
+                        <select id="planFrequency" class="plan__input">
+                            <option value="1">1 Month</option>
+                            <option value="2">2 Months</option>
+                            <option value="3">3 Months</option>
+                        </select>
+                    </div>
+
+                    <div class="plan__field">
+                        <label class="plan__label">Status</label>
+                        <select id="planStatus" class="plan__input">
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Planned">Planned</option>
+                        </select>
+                    </div>
+
                 </div>
 
-            </div>
+                <!-- ROW 4: Notes -->
+                <div class="plan__row">
 
-            <!-- ROW 3 -->
-            <div class="plan__row">
+                    <div class="plan__field">
+                        <label class="plan__label">Notes / Comments</label>
+                        <textarea id="planNotes"
+                                  class="plan__input"
+                                  rows="3"
+                                  placeholder="Enter any notes or comments..."></textarea>
+                    </div>
 
-                <div class="plan__field">
-                    <label class="plan__label">Frequency (months)</label>
-                    <select id="planFrequency" class="plan__input">
-                        <option value="1">1 Month</option>
-                        <option value="2">2 Months</option>
-                        <option value="3">3 Months</option>
-                    </select>
                 </div>
 
-                <div class="plan__field">
-                    <label class="plan__label">Status</label>
-                    <select id="planStatus" class="plan__input">
-                        <option value="Planned">Planned</option>
-                        <option value="Scheduled">Scheduled</option>
-                    </select>
+                <!-- PREVIEW TABLE (shown after clicking Preview) -->
+                <div id="planPreview" class="plan__preview hidden"></div>
+
+                <!-- CONFLICT CONFIRMATION BOX (shown if duplicates found) -->
+                <div id="planConfirmBox" class="hidden"></div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="plan__actions">
+                    <button class="plan__btn-ghost" onclick="previewAndConfirm()">Preview</button>
                 </div>
 
+                <!-- SUCCESS / ERROR MESSAGE -->
+                <div id="planMessage" class="plan__message hidden"></div>
+
+            </div>
+            <!-- END PLAN FORM CARD -->
+
+
+            <!-- ------------------------------------------------
+                 GANTT GRID
+                 - Shows all maintenance plans by week (year view)
+                 - Scrollable horizontally
+                 - Frozen first 4 columns (Category, Machine, Freq, N)
+                 - Color coded: S=Scheduled, P=Planned, -C=Completed
+                 - Red=Delayed, Blue=Future
+            ------------------------------------------------ -->
+            <div class="plan-grid__wrap">
+                <div class="plan-grid__scroll">
+                    <table class="plan-grid__table" id="planGanttTable">
+                        <thead id="planGanttHead"></thead>
+                        <tbody id="planGanttBody"></tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- PREVIEW -->
-            <div id="planPreview" class="plan__preview hidden"></div>
-
-            <!-- CONFIRM BOX -->
-            <div id="planConfirmBox" class="hidden"></div>
+            <!-- GANTT TOOLTIP (shown on cell hover) -->
+            <div id="planTooltip" class="plan-grid__tooltip hidden"></div>
 
 
-            <!-- BUTTONS -->
-            <div class="plan__actions">
-                <button class="plan__btn-ghost" onclick="previewAndConfirm()">Preview</button>
-                <!--<button class="plan__btn-primary" onclick="saveSchedule()">Save to Database</button>-->
-            </div>
+        </div>
 
-            <!-- MESSAGE -->
-            <div id="planMessage" class="plan__message hidden"></div>
-     </div>
-
-     
-
-            <!-- GANTT GRID -->
-<div class="plan-grid__wrap">
-    <div class="plan-grid__scroll">
-        <table class="plan-grid__table" id="planGanttTable">
-            <thead id="planGanttHead"></thead>
-            <tbody id="planGanttBody"></tbody>
-        </table>
     </div>
-</div>
-
-<!-- TOOLTIP -->
-<div id="planTooltip" class="plan-grid__tooltip hidden"></div>
-
-      </div>
+    <!-- END TAB: PLAN -->
 
 
-    </div> 
+    <!-- ============================================================
+         TAB: ACTUAL
+         - Stat cards: Planned, Scheduled, Pending, Completed
+         - Filter buttons: This Week Pending, All Pending, All Tasks
+         - Task list cards
+         - Checklist screen (shown when a task is opened)
+    ============================================================ -->
+    <div id="tab-Actual" class="dashboard__tab-content hidden">
 
-
-    <!-- TAB: DASHBOARD Actual  -->
-<div id="tab-Actual" class="dashboard__tab-content hidden">
-
-        <!-- Actual tab CONTAINER -->
         <div class="dashboard__container">
 
-            <!-- STATS -->
+            <!-- STAT CARDS -->
             <div class="dashboard__stats-grid">
+
                 <div class="dashboard__stat-card">
                     <h2>Total Planned</h2>
                     <p id="dashboardPlannedCount">0</p>
                 </div>
+
                 <div class="dashboard__stat-card">
                     <h2>Total Scheduled</h2>
                     <p id="dashboardScheduledCount">0</p>
                 </div>
+
                 <div class="dashboard__stat-card">
                     <h2>Pending</h2>
                     <p id="dashboardPendingCount">0</p>
                 </div>
+
                 <div class="dashboard__stat-card">
                     <h2>Completed</h2>
                     <p id="dashboardCompletedCount">0</p>
                 </div>
-            </div>
 
-            <!-- FILTERS -->
+            </div>
+            <!-- END STAT CARDS -->
+
+
+            <!-- FILTER BUTTONS -->
             <div class="dashboard__filter-card">
                 <button class="dashboard__filter-button" onclick="loadTasks('weekPending', this)">This Week Pending</button>
                 <button class="dashboard__filter-button" onclick="loadTasks('allPending', this)">All Pending</button>
                 <button class="dashboard__filter-button" onclick="loadTasks('all', this)">All Tasks</button>
             </div>
-
-            <button class="dashboard__filter-button"
-        onclick="loadTasks('allPending', this)">
-
-            All Pending
-
-                </button>
-
-                <button class="dashboard__filter-button"
-                        onclick="loadTasks('all', this)">
-
-                    All Tasks
-
-                </button>
-
-                <!-- CHECKLIST SCREEN -->
-            <div id="checklistScreen"
-            class="checklist-screen hidden">
-
-     
-    <!-- TOP BAR -->
-    <div class="checklist-topbar">
-
-        <button class="back-button"
-                onclick="backToTasks()">
-
-            ← Back
-
-        </button>
-
-        <div class="checklist-title">
-
-            Maintenance Checklist
-
-        </div>
-
-    </div>
-
-    <!-- CHECKLIST ITEMS -->
-    <div id="checklistContainer"
-         class="checklist-container">
-
-    </div>
-
-    <!-- BOTTOM ACTION BAR -->
-    <div class="checklist-bottom-bar">
-
-        <button class="save-button"
-                onclick="saveChecklist()">
-
-            Save Checklist
-
-        </button>
-
-    </div>
-
-</div>
-
-<div id="taskListScreen">
-
-    <div id="dashboardTaskList"></div>
-
-</div>
+            <!-- END FILTER BUTTONS -->
 
 
-<!-- TASK LIST -->
-            <div id="dashboardTaskList">
-
+            <!-- ------------------------------------------------
+                 TASK LIST SCREEN
+                 - Default visible inside Actual tab
+                 - Hidden when checklist is opened
+            ------------------------------------------------ -->
+            <div id="taskListScreen">
+                <div id="dashboardTaskList"></div>
             </div>
 
-        </div>
 
+            <!-- ------------------------------------------------
+                 CHECKLIST SCREEN
+                 - Hidden by default
+                 - Shown when a task card is tapped
+                 - Back button returns to task list
+            ------------------------------------------------ -->
+            <div id="checklistScreen" class="checklist-screen hidden">
+
+                <!-- Top Bar -->
+                <div class="checklist-topbar">
+                    <button class="back-button" onclick="backToTasks()">← Back</button>
+                    <div class="checklist-title">Maintenance Checklist</div>
                 </div>
 
-        </div>
+                <!-- Checklist Items (populated by JS) -->
+                <div id="checklistContainer" class="checklist-container"></div>
 
-    </div>
+                <!-- Save Bar -->
+                <div class="checklist-bottom-bar">
+                    <button class="save-button" onclick="saveChecklist()">Save Checklist</button>
+                </div>
 
-</div>
-
-<!-- TAB: DASHBOARD -->
-<div id="tab-dashboard" class="dashboard__tab-content hidden">
-    <div class="dash__container">
-
-        <div class="dash__grid">
-
-            <div class="dash__card">
-                <div class="dash__label">Total Planned</div>
-                <div class="dash__number" id="dashTotal">0</div>
             </div>
+            <!-- END CHECKLIST SCREEN -->
 
-            <div class="dash__card">
-                <div class="dash__label">Scheduled</div>
-                <div class="dash__number" id="dashScheduled">0</div>
-            </div>
-
-            <div class="dash__card">
-                <div class="dash__label">Pending</div>
-                <div class="dash__number dash__number--pending" id="dashPending">0</div>
-            </div>
-
-            <div class="dash__card">
-                <div class="dash__label">Completed</div>
-                <div class="dash__number dash__number--completed" id="dashCompleted">0</div>
-            </div>
-
-            <div class="dash__card">
-                <div class="dash__label">Overdue</div>
-                <div class="dash__number dash__number--overdue" id="dashOverdue">0</div>
-            </div>
 
         </div>
 
     </div>
+    <!-- END TAB: ACTUAL -->
+
+
+    <!-- ============================================================
+         TAB: DASHBOARD
+         - Summary stat cards loaded from Supabase
+         - Total Planned, Scheduled, Pending, Completed, Overdue
+    ============================================================ -->
+    <div id="tab-dashboard" class="dashboard__tab-content hidden">
+
+        <div class="dash__container">
+
+            <div class="dash__grid">
+
+                <div class="dash__card">
+                    <div class="dash__label">Total Planned</div>
+                    <div class="dash__number" id="dashTotal">0</div>
+                </div>
+
+                <div class="dash__card">
+                    <div class="dash__label">Scheduled</div>
+                    <div class="dash__number" id="dashScheduled">0</div>
+                </div>
+
+                <div class="dash__card">
+                    <div class="dash__label">Pending</div>
+                    <div class="dash__number dash__number--pending" id="dashPending">0</div>
+                </div>
+
+                <div class="dash__card">
+                    <div class="dash__label">Completed</div>
+                    <div class="dash__number dash__number--completed" id="dashCompleted">0</div>
+                </div>
+
+                <div class="dash__card">
+                    <div class="dash__label">Overdue</div>
+                    <div class="dash__number dash__number--overdue" id="dashOverdue">0</div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <!-- END TAB: DASHBOARD -->
+
+
 </div>
+<!-- END DASHBOARD SCREEN -->
 
 
-
-    <!-- JS -->
-    <script src="js/app.js"></script>
+<!-- ============================================================
+     JAVASCRIPT
+     - Loaded at bottom so DOM is ready
+============================================================ -->
+<script src="js/app.js"></script>
 
 </body>
 

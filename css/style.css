@@ -1,29 +1,62 @@
-/* =====================================
-   BASE
-===================================== */
+/* ============================================================
+   DWPMS MAINTENANCE APP — STYLESHEET
+   
+   Sections (in order):
+   1.  Base & Utilities
+   2.  Login Screen
+   3.  Dashboard Header
+   4.  Tab Bar
+   5.  Actual Tab — Container & Stats
+   6.  Actual Tab — Filter Buttons
+   7.  Actual Tab — Task Cards
+   8.  Checklist Screen
+   9.  Plan Tab — Form
+   10. Plan Tab — Confirmation Box
+   11. Gantt Grid
+       11a. Wrapper & Scroll
+       11b. Table Base
+       11c. Frozen Columns (Desktop)
+       11d. Cell Badges
+       11e. Tooltip
+   12. Dashboard Tab — Stat Cards
+   13. Mobile Overrides (@media max-width: 768px)
+       13a. Header
+       13b. Plan Form
+       13c. Dashboard Cards
+       13d. Gantt Frozen Columns (Mobile)
+============================================================ */
 
+
+/* ============================================================
+   1. BASE & UTILITIES
+============================================================ */
+
+/* Applied to body — sets background and font stack */
+body {
+    margin: 0;
+    background: #f4f7fb;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont,
+                 "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Utility: hide any element
+   !important ensures it overrides display rules from other classes */
 .hidden {
     display: none !important;
 }
 
+/* Dashboard screen wrapper — block by default, hidden on load via .hidden */
 .dashboard {
     display: block;
 }
 
 
-body {
-    margin: 0;
-    background: #f4f7fb;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-}
+/* ============================================================
+   2. LOGIN SCREEN
+   - Centered card on full-height screen
+   - Shown on page load, hidden after login
+============================================================ */
 
-.hidden {
-    display: none;
-}
-
-/* =====================================
-   LOGIN
-===================================== */
 .login {
     height: 100vh;
     display: flex;
@@ -68,18 +101,22 @@ body {
     font-size: 18px;
 }
 
-/* =====================================
-   DASHBOARD HEADER
-===================================== */
+
+/* ============================================================
+   3. DASHBOARD HEADER
+   - Dark blue bar at top of dashboard
+   - Top row: centered page title
+   - Bottom row: DW logo (left) | user + logout + nsoft logo (right)
+============================================================ */
+
 .dashboard__header {
     background: #1e3a8a;
     color: white;
-    align-items: center;
-    justify-content: space-between;
     padding: 10px 15px;
     flex-wrap: wrap;
 }
 
+/* Title row — centered */
 .header-top {
     text-align: center;
     margin-bottom: 10px;
@@ -93,12 +130,14 @@ body {
     text-align: center;
 }
 
+/* Logo + user row */
 .header-bottom {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
+/* Left: DW logo */
 .header-left {
     display: flex;
     align-items: center;
@@ -107,24 +146,34 @@ body {
     min-width: 0;
 }
 
+/* Right: logged user name + logout button + nsoft logo */
 .header-right {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
+/* NSoft logo */
 .logo {
     height: 38px;
     width: auto;
     margin-left: 5px;
 }
 
+/* DW logo */
 .logo-DW {
     height: 38px;
     width: auto;
     margin-left: 5px;
 }
 
+/* Logged user text label */
+.user-info {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Red logout button */
 .logout-button {
     background: #dc3545;
     color: white;
@@ -136,20 +185,21 @@ body {
     transition: 0.2s;
 }
 
-.logout-button:hover { background: #c82333; }
+.logout-button:hover  { background: #c82333; }
 .logout-button:active { transform: scale(0.96); }
 
-.user-info {
-    font-size: 14px;
-    font-weight: 600;
-}
 
-/* =====================================
-   TABS
-===================================== */
+/* ============================================================
+   4. TAB BAR
+   - Sits below the header
+   - Tabs: Plan | Actual | Dashboard
+   - Active tab highlighted with blue underline
+   - flex: 1 on each tab makes them equal width and fill the bar
+============================================================ */
+
 .dashboard__tabs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: wrap;        /* wraps on very small screens */
     gap: 4px;
     padding: 0 12px;
     border-bottom: 1px solid #ddd;
@@ -157,6 +207,7 @@ body {
 }
 
 .dashboard__tab {
+    flex: 1;                /* equal width tabs */
     padding: 10px 14px;
     font-size: 13px;
     font-weight: 500;
@@ -165,29 +216,36 @@ body {
     border-bottom: 2px solid transparent;
     cursor: pointer;
     color: #888;
-    flex: 1;
     text-align: center;
-    min-width: 0;
+    min-width: 0;           /* allows flex shrink below content width */
 }
 
+/* Active tab: blue underline + blue text */
 .dashboard__tab.active {
     border-bottom-color: #1a73e8;
     color: #1a73e8;
 }
 
-/* =====================================
-   DASHBOARD CONTAINER (Actual tab)
-===================================== */
+
+/* ============================================================
+   5. ACTUAL TAB — CONTAINER & STAT CARDS
+   - Yellow stat cards showing counts
+   - Auto-fit grid so cards wrap on small screens
+============================================================ */
+
+/* Outer container padding for Actual tab content */
 .dashboard__container {
     padding: 5px;
 }
 
+/* Stat card grid — auto-wraps, minimum 180px per card */
 .dashboard__stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 10px;
 }
 
+/* Individual stat card — yellow background */
 .dashboard__stat-card {
     background: rgb(253, 247, 74);
     padding: 10px 12px;
@@ -208,17 +266,26 @@ body {
     font-weight: bold;
 }
 
+
+/* ============================================================
+   6. ACTUAL TAB — FILTER BUTTONS
+   - This Week Pending / All Pending / All Tasks
+   - Active state uses darker blue
+============================================================ */
+
+/* Filter bar wrapper */
 .dashboard__filter-card {
     background: white;
     padding: 15px;
     border-radius: 15px;
     margin-top: 15px;
+    margin-bottom: 15px;
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 15px;
+    flex-wrap: wrap;    /* wraps buttons on small screens */
 }
 
+/* Individual filter button */
 .dashboard__filter-button {
     background: #1e3a8a;
     color: white;
@@ -237,6 +304,7 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+/* Active filter — darker shade to indicate current selection */
 .dashboard__filter-button.active {
     background: #1565c0;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -246,9 +314,16 @@ body {
     transform: scale(0.97);
 }
 
-/* =====================================
-   TASK CARDS (Actual tab)
-===================================== */
+
+/* ============================================================
+   7. ACTUAL TAB — TASK CARDS
+   - One card per maintenance plan row
+   - Left: Plan ID + machine info
+   - Center: service type + week
+   - Right: status badge
+   - Clicking a card opens the checklist screen
+============================================================ */
+
 .task-row {
     background: white;
     border-radius: 12px;
@@ -259,10 +334,12 @@ body {
     align-items: center;
     gap: 15px;
     box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-    border-left: 5px solid #1e3a8a;
+    border-left: 5px solid #1e3a8a;   /* blue left accent bar */
+    cursor: pointer;
 }
 
-.task-row__left { flex: 1; }
+/* Left section: plan ID and machine details */
+.task-row__left    { flex: 1; }
 
 .task-row__title {
     font-size: 18px;
@@ -276,7 +353,14 @@ body {
     font-size: 13px;
 }
 
-.task-row__center { flex: 1.2; }
+.task-row__category {
+    font-size: 13px;
+    color: #546e7a;
+    margin-top: 4px;
+}
+
+/* Center section: service type and week number */
+.task-row__center  { flex: 1.2; }
 
 .task-row__service {
     font-weight: bold;
@@ -290,22 +374,18 @@ body {
     margin-bottom: 3px;
 }
 
-.task-row__category {
-    font-size: 13px;
-    color: #546e7a;
-    margin-top: 4px;
-}
-
 .task-row__range {
     color: #777;
     font-size: 12px;
 }
 
+/* Right section: status badge */
 .task-row__right {
     min-width: 100px;
     text-align: right;
 }
 
+/* Status badge pill */
 .task-row__badge {
     padding: 6px 14px;
     border-radius: 20px;
@@ -314,78 +394,26 @@ body {
     font-weight: bold;
 }
 
-.task-row__badge--pending  { background: orange; }
+.task-row__badge--pending   { background: orange; }
 .task-row__badge--completed { background: green; }
 
-/* =====================================
-   CHECKLIST
-===================================== */
-.check-row {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 10px;
-    margin-bottom: 8px;
-}
 
-.check-text {
-    font-size: 13px;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 8px;
-}
+/* ============================================================
+   8. CHECKLIST SCREEN
+   - Shown when a task card is tapped
+   - Replaces task list (taskListScreen hidden)
+   - Each row has YES / NO / N/A buttons + comment input
+   - Sticky save bar at bottom
+============================================================ */
 
-.check-bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.check-buttons {
-    display: flex;
-    gap: 6px;
-}
-
-.check-buttons button {
-    padding: 5px 10px;
-    font-size: 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    cursor: pointer;
-    background: #f8f9fb;
-    transition: 0.2s;
-}
-
-.check-buttons button:hover { background: #e6f0ff; }
-
-.btn-yes.active  { background: #28a745; color: white; border-color: #28a745; }
-.btn-no.active   { background: #dc3545; color: white; border-color: #dc3545; }
-.btn-na.active   { background: #6c757d; color: white; border-color: #6c757d; }
-
-.btn-yes.active:hover { background-color: #28a745 !important; }
-.btn-no.active:hover  { background-color: #dc3545 !important; }
-.btn-na.active:hover  { background-color: #6c757d !important; }
-
-.checklist-option-btn {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-}
-
-.check-comment input {
-    width: 180px;
-    padding: 5px 8px;
-    font-size: 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-}
-
+/* Full-screen checklist container */
 .checklist-screen {
     padding: 15px;
     background: #f4f7fb;
     min-height: 100vh;
 }
 
+/* Top bar: back button + title */
 .checklist-topbar {
     display: flex;
     align-items: center;
@@ -403,6 +431,7 @@ body {
     font-weight: 700;
 }
 
+/* Back button — white on blue */
 .back-button {
     background: white;
     color: #1565c0;
@@ -419,12 +448,82 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
+/* Scrollable list of checklist items */
 .checklist-container {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
+/* Individual checklist question card */
+.check-row {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+/* Question text */
+.check-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+/* Row containing answer buttons + comment input */
+.check-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+/* YES / NO / N/A button group */
+.check-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.check-buttons button {
+    padding: 5px 10px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #f8f9fb;
+    transition: 0.2s;
+}
+
+.check-buttons button:hover { background: #e6f0ff; }
+
+/* Active states for answer buttons */
+.btn-yes.active { background: #28a745; color: white; border-color: #28a745; }
+.btn-no.active  { background: #dc3545; color: white; border-color: #dc3545; }
+.btn-na.active  { background: #6c757d; color: white; border-color: #6c757d; }
+
+/* Keep active color on hover — prevents hover from overriding active */
+.btn-yes.active:hover { background-color: #28a745 !important; }
+.btn-no.active:hover  { background-color: #dc3545 !important; }
+.btn-na.active:hover  { background-color: #6c757d !important; }
+
+/* Prevents tap flash on mobile */
+.checklist-option-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Optional comment input per checklist item */
+.check-comment input {
+    width: 180px;
+    padding: 5px 8px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+/* Sticky save bar — stays at bottom while scrolling checklist */
 .checklist-bottom-bar {
     position: sticky;
     bottom: 0;
@@ -435,6 +534,7 @@ body {
     box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
 }
 
+/* Full-width green save button */
 .save-button {
     width: 100%;
     background: linear-gradient(135deg, #2e7d32, #43a047);
@@ -452,13 +552,20 @@ body {
 .save-button:hover  { transform: translateY(-2px); }
 .save-button:active { transform: scale(0.98); }
 
-/* =====================================
-   PLAN TAB
-===================================== */
+
+/* ============================================================
+   9. PLAN TAB — FORM
+   - Card containing the create maintenance plan form
+   - 2-column grid rows, stacks to 1 column on mobile
+   - Preview table shown below form after clicking Preview
+============================================================ */
+
+/* Outer padding around the plan card */
 .plan__container {
     padding: 24px;
 }
 
+/* White card wrapping the form */
 .plan__card {
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -474,6 +581,7 @@ body {
     color: #111;
 }
 
+/* 2-column form row — stacks to 1 column on mobile via media query */
 .plan__row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -481,12 +589,14 @@ body {
     margin-bottom: 16px;
 }
 
+/* Label + input/select stacked vertically */
 .plan__field {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
+/* Uppercase small label above input */
 .plan__label {
     font-size: 12px;
     font-weight: 500;
@@ -495,6 +605,7 @@ body {
     letter-spacing: 0.04em;
 }
 
+/* Shared input / select / textarea style */
 .plan__input {
     padding: 8px 12px;
     border: 1px solid #d1d5db;
@@ -502,6 +613,7 @@ body {
     font-size: 14px;
     color: #111;
     background: #fff;
+    font-family: inherit;
 }
 
 .plan__input:focus {
@@ -509,6 +621,7 @@ body {
     border-color: #1a73e8;
 }
 
+/* Action buttons row — right aligned */
 .plan__actions {
     display: flex;
     justify-content: flex-end;
@@ -516,6 +629,7 @@ body {
     margin-top: 20px;
 }
 
+/* Blue primary button — used for Save */
 .plan__btn-primary {
     padding: 8px 20px;
     background: #1a73e8;
@@ -527,6 +641,7 @@ body {
     cursor: pointer;
 }
 
+/* Ghost button — used for Preview / Cancel */
 .plan__btn-ghost {
     padding: 8px 20px;
     background: transparent;
@@ -537,17 +652,19 @@ body {
     cursor: pointer;
 }
 
+/* Preview table — scrollable on mobile */
 .plan__preview {
     margin-top: 16px;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
-    overflow: auto;
+    overflow-x: auto;
 }
 
 .plan__preview table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
+    white-space: nowrap;
 }
 
 .plan__preview th {
@@ -567,6 +684,7 @@ body {
 
 .plan__preview tr:last-child td { border-bottom: none; }
 
+/* Success / error message below form */
 .plan__message {
     margin-top: 14px;
     padding: 10px 14px;
@@ -586,9 +704,16 @@ body {
     border: 1px solid #fca5a5;
 }
 
-/* =====================================
-   PLAN CONFIRMATION
-===================================== */
+
+/* ============================================================
+   10. PLAN TAB — CONFIRMATION BOX
+   - Shown below preview table after clicking Preview
+   - Red/warning version: conflicts found
+   - Green/clean version: no conflicts
+   - Conflict table is scrollable on mobile
+============================================================ */
+
+/* Warning box — red — shown when conflicts exist */
 .plan-confirm__warning {
     margin-top: 16px;
     border: 1px solid #fca5a5;
@@ -597,6 +722,7 @@ body {
     background: #fff5f5;
 }
 
+/* Clean box — green — shown when no conflicts exist */
 .plan-confirm__clean {
     margin-top: 16px;
     border: 1px solid #86efac;
@@ -619,13 +745,15 @@ body {
     margin-bottom: 8px;
 }
 
+/* Conflict table — display block + overflow-x to scroll on mobile */
 .plan-confirm__table {
+    display: block;
     width: 100%;
+    overflow-x: auto;
     border-collapse: collapse;
     font-size: 12px;
     margin-bottom: 14px;
-    overflow-x: auto;
-    display: block;
+    white-space: nowrap;    /* prevents wrapping inside cells */
 }
 
 .plan-confirm__table th {
@@ -643,6 +771,7 @@ body {
     color: #111;
 }
 
+/* Confirm question text above action buttons */
 .plan-confirm__question {
     font-size: 13px;
     font-weight: 500;
@@ -650,107 +779,191 @@ body {
     margin-bottom: 12px;
 }
 
+/* Yes Save + Cancel button row */
 .plan-confirm__btns {
     display: flex;
     gap: 10px;
 }
 
-/* =====================================
-   GANTT GRID (Actual tab)
-===================================== */
+
+/* ============================================================
+   11. GANTT GRID
+   - Horizontally scrollable year-view maintenance schedule
+   - Frozen first 4 columns: Category | Machine | Freq | N
+   - Fixed pixel widths on frozen columns prevent shrinking
+   - Week columns auto-size based on content
+   - Color-coded cells: scheduled / planned / completed / delayed / future
+============================================================ */
+
+/* ---- 11a. Wrapper & Scroll ---- */
+
+/* Outer wrapper — rounded border, hides overflow for border-radius */
 .plan-grid__wrap {
     margin-top: 16px;
-    margin-bottom: 30px;
+    margin-bottom: 10px;        /* space for tooltip above bottom of screen */
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     overflow: hidden;
     background: #fff;
 }
 
+/* Scroll container — enables horizontal scrolling
+   overflow: hidden on parent clips the border-radius correctly */
 .plan-grid__scroll {
     overflow-x: auto;
+    overflow-y: visible;
     width: 100%;
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch;  /* smooth scroll on iOS */
 }
+
+
+/* ---- 11b. Table Base ---- */
 
 .plan-grid__table {
     border-collapse: collapse;
     font-size: 12px;
-    min-width: 100%;
     white-space: nowrap;
+    table-layout: fixed;
 }
 
-/* ALL sticky th */
+/* All header cells — dark blue background, sticky to top */
 .plan-grid__table th {
     background: #1a3a5c;
     color: #fff;
-    padding: 8px 10px;
+    padding: 8px 6px;
     text-align: center;
     border: 1px solid #254d7a;
     font-weight: 500;
     position: sticky;
     top: 0;
-    z-index: 2;
+    z-index: 2;                 /* week header cells sit above body */
 }
 
-/* sticky frozen column headers */
-.plan-grid__table thead th.col-sticky {
-    position: sticky;
-    top: 0;
-    z-index: 4;
-    background: #1a3a5c;
-}
-
-.plan-grid__table thead th.col-sticky:nth-child(1) { left: 0;     min-width: 140px; max-width: 140px; }
-.plan-grid__table thead th.col-sticky:nth-child(2) { left: 140px; min-width: 80px;  max-width: 80px;  }
-.plan-grid__table thead th.col-sticky:nth-child(3) { left: 220px; min-width: 50px;  max-width: 50px;  }
-.plan-grid__table thead th.col-sticky:nth-child(4) { left: 270px; min-width: 30px;  max-width: 30px;  }
-
-/* sticky frozen column cells */
-.plan-grid__table tbody td.col-sticky {
-    position: sticky;
-    background: #f9fafb;
-    font-weight: 500;
-    text-align: left;
-    z-index: 1;
-}
-
-.plan-grid__table tbody td.col-sticky:nth-child(1) { left: 0;     min-width: 140px; max-width: 140px; }
-.plan-grid__table tbody td.col-sticky:nth-child(2) { left: 140px; min-width: 80px;  max-width: 80px;  }
-.plan-grid__table tbody td.col-sticky:nth-child(3) { left: 220px; min-width: 50px;  max-width: 50px;  }
-.plan-grid__table tbody td.col-sticky:nth-child(4) { left: 270px; min-width: 30px;  max-width: 30px;  }
-
-/* data cells */
+/* All body cells — light background, centered */
 .plan-grid__table td {
-    padding: 6px 10px;
+    padding: 6px 8px;
     border: 1px solid #e5e7eb;
     text-align: center;
     color: #111;
     background: #fff;
 }
 
-.plan-grid__table tr:hover td             { background: #f0f4ff; }
-.plan-grid__table tr:hover td.col-sticky  { background: #e8eeff; }
+/* Row hover — highlight whole row */
+.plan-grid__table tr:hover td            { background: #f0f4ff; }
+.plan-grid__table tr:hover td.col-sticky { background: #e8eeff; }
 
-/* cell badges */
+
+/* ---- 11c. Frozen Columns (Desktop) ----
+   
+   IMPORTANT: Width values must match between:
+   - CSS (min-width / max-width / left offset)
+   - JS renderPlanGantt() inline styles on th and td
+   
+   Desktop frozen column widths:
+   Col 1 (Category): 130px  — left: 0
+   Col 2 (Machine):   80px  — left: 130px
+   Col 3 (Freq):      50px  — left: 210px
+   Col 4 (N):         35px  — left: 260px
+   Total frozen area: 295px
+------------------------------------------------ */
+
+/* Shared sticky rules for ALL frozen header cells */
+.plan-grid__table thead th.col-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 4;                 /* above everything — highest z-index */
+    background: #1a3a5c;        /* solid background prevents bleed-through */
+    text-align: left;
+}
+
+/* Shared sticky rules for ALL frozen body cells */
+.plan-grid__table tbody td.col-sticky {
+    position: sticky;
+    z-index: 1;
+    background: #f9fafb;        /* light grey — distinct from data cells */
+    font-weight: 500;
+    text-align: left;
+}
+
+/* Col 1: Category — widest frozen column */
+.plan-grid__table thead th.col-sticky:nth-child(1),
+.plan-grid__table tbody td.col-sticky:nth-child(1) {
+    left: 0;
+    width: 130px;
+    min-width: 130px;
+    max-width: 130px;
+}
+
+/* Col 2: Machine ID */
+.plan-grid__table thead th.col-sticky:nth-child(2),
+.plan-grid__table tbody td.col-sticky:nth-child(2) {
+    left: 130px;
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+}
+
+/* Col 3: Frequency */
+.plan-grid__table thead th.col-sticky:nth-child(3),
+.plan-grid__table tbody td.col-sticky:nth-child(3) {
+    left: 210px;
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+}
+
+/* Col 4: Count (N) */
+.plan-grid__table thead th.col-sticky:nth-child(4),
+.plan-grid__table tbody td.col-sticky:nth-child(4) {
+    left: 260px;
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+}
+
+
+/* ---- 11d. Cell Badges ----
+   Small colored pills inside week cells
+   S = Scheduled (green), P = Planned (red)
+   -C suffix = Completed, delayed = past+pending, future = upcoming
+------------------------------------------------ */
+
 .plan-grid__cell {
     display: inline-block;
-    padding: 2px 6px;
+    padding: 2px 5px;
     border-radius: 4px;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    min-width: 28px;
+    min-width: 24px;
+    text-align: center;
 }
 
+/* Scheduled — green */
 .plan-grid__cell.scheduled { background: #86efac; color: #14532d; }
+
+/* Planned — light red */
 .plan-grid__cell.planned   { background: #fca5a5; color: #7f1d1d; }
+
+/* Scheduled + Completed — green with tick */
 .plan-grid__cell.s-c       { background: #86efac; color: #14532d; }
+
+/* Planned + Completed — light red */
 .plan-grid__cell.p-c       { background: #fca5a5; color: #7f1d1d; }
+
+/* Delayed — past due, not completed — bright red */
 .plan-grid__cell.delayed   { background: #f87171; color: #7f1d1d; }
+
+/* Future — upcoming week — blue */
 .plan-grid__cell.future    { background: #93c5fd; color: #1e3a5f; }
 
-/* tooltip */
+
+/* ---- 11e. Tooltip ----
+   Dark floating card shown on cell hover
+   Positioned above or below cell by JS
+   transform: translateX(-50%) centers it on the cell
+------------------------------------------------ */
+
 .plan-grid__tooltip {
     position: fixed;
     background: #1e293b;
@@ -760,27 +973,35 @@ body {
     font-size: 12px;
     line-height: 1.7;
     z-index: 9999;
-    pointer-events: none;
+    pointer-events: none;       /* never blocks mouse events */
     max-width: 240px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     transform: translateX(-50%);
 }
 
-.plan-grid__tooltip.hidden { display: none; }
+.plan-grid__tooltip.hidden { display: none !important; }
 
-/* =====================================
-   DASHBOARD TAB
-===================================== */
+
+/* ============================================================
+   12. DASHBOARD TAB — STAT CARDS
+   - 5 cards in a row on desktop
+   - Shows: Total Planned, Scheduled, Pending, Completed, Overdue
+   - Color-coded numbers: orange=pending, green=completed, red=overdue
+============================================================ */
+
+/* Outer padding */
 .dash__container {
     padding: 24px;
 }
 
+/* 5-column grid on desktop — overridden to 2 columns on mobile */
 .dash__grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 16px;
 }
 
+/* Individual stat card */
 .dash__card {
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -789,6 +1010,7 @@ body {
     text-align: center;
 }
 
+/* Small uppercase label */
 .dash__label {
     font-size: 12px;
     font-weight: 500;
@@ -798,66 +1020,145 @@ body {
     margin-bottom: 10px;
 }
 
-.dash__number           { font-size: 36px; font-weight: 600; color: #1a3a5c; }
-.dash__number--pending  { color: #d97706; }
-.dash__number--completed{ color: #16a34a; }
-.dash__number--overdue  { color: #dc2626; }
+/* Large number */
+.dash__number            { font-size: 36px; font-weight: 600; color: #1a3a5c; }
+.dash__number--pending   { color: #d97706; }    /* orange */
+.dash__number--completed { color: #16a34a; }    /* green */
+.dash__number--overdue   { color: #dc2626; }    /* red */
 
-/* =====================================
-   MOBILE
-===================================== */
+
+/* ============================================================
+   13. MOBILE OVERRIDES
+   Applies when viewport is 768px wide or less (phones, small tablets)
+   
+   13a. Header
+   13b. Plan Form
+   13c. Dashboard Cards
+   13d. Gantt Frozen Columns (Mobile)
+       Mobile frozen column widths:
+       Col 1 (Category): 70px  — left: 0
+       Col 2 (Machine):  55px  — left: 70px
+       Col 3 (Freq):     35px  — left: 125px
+       Col 4 (N):        25px  — left: 160px
+       Total frozen area: 185px
+============================================================ */
+
 @media (max-width: 768px) {
 
-    /* header */
+    /* ---- 13a. Header ---- */
+
+    /* Stack logo row vertically on mobile */
     .header-bottom {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
     }
 
+    /* Right side fills full width with space-between */
     .header-right {
         width: 100%;
         justify-content: space-between;
         align-items: center;
     }
 
+    /* Center DW logo on mobile */
     .header-left {
         justify-content: center;
         width: 100%;
     }
 
+    /* Slightly smaller logo on mobile */
     .logo-DW { height: 32px; margin: 0; }
 
-    /* plan form */
+
+    /* ---- 13b. Plan Form ---- */
+
+    /* Tighter padding on mobile */
     .plan__container { padding: 12px; }
-    .plan__card      { padding: 16px; }
+    .plan__card      { padding: 16px; max-width: 100%; }
+
+    /* Stack 2-column rows to single column */
     .plan__row       { grid-template-columns: 1fr; }
     .plan__row.three { grid-template-columns: 1fr; }
 
-    /* confirmation table */
+    /* Smaller text in confirmation conflict table */
     .plan-confirm__table th,
     .plan-confirm__table td { padding: 4px 6px; font-size: 11px; }
 
-    /* dashboard cards */
+
+    /* ---- 13c. Dashboard Cards ---- */
+
     .dash__container { padding: 12px; }
-    .dash__grid      { grid-template-columns: repeat(2, 1fr); }
+
+    /* 2 columns on mobile instead of 5 */
+    .dash__grid { grid-template-columns: repeat(2, 1fr); }
+
+    /* Last card (Overdue) spans full width on 2-col grid */
     .dash__grid .dash__card:last-child { grid-column: 1 / -1; }
 
-    /* gantt frozen columns */
+
+    /* ---- 13d. Gantt Frozen Columns (Mobile) ----
+       Narrower widths to leave more room for week columns
+       All four columns must be kept in sync:
+       CSS width + left offsets + JS inline styles
+    ---- */
+
+    /* Col 1: Category — narrowed to 70px */
     .plan-grid__table thead th.col-sticky:nth-child(1),
-    .plan-grid__table tbody td.col-sticky:nth-child(1) { left: 0;     min-width: 70px; max-width: 70px; }
+    .plan-grid__table tbody td.col-sticky:nth-child(1) {
+        left: 0;
+        width: 70px;
+        min-width: 70px;
+        max-width: 70px;
+        font-size: 10px;
+        padding: 4px 3px;
+    }
 
+    /* Col 2: Machine — narrowed to 55px, starts at 70px */
     .plan-grid__table thead th.col-sticky:nth-child(2),
-    .plan-grid__table tbody td.col-sticky:nth-child(2) { left: 70px;  min-width: 50px; max-width: 50px; }
+    .plan-grid__table tbody td.col-sticky:nth-child(2) {
+        left: 70px;
+        width: 55px;
+        min-width: 55px;
+        max-width: 55px;
+        font-size: 10px;
+        padding: 4px 3px;
+    }
 
+    /* Col 3: Freq — narrowed to 35px, starts at 125px */
     .plan-grid__table thead th.col-sticky:nth-child(3),
-    .plan-grid__table tbody td.col-sticky:nth-child(3) { left: 120px; min-width: 30px; max-width: 30px; }
+    .plan-grid__table tbody td.col-sticky:nth-child(3) {
+        left: 125px;
+        width: 35px;
+        min-width: 35px;
+        max-width: 35px;
+        font-size: 10px;
+        padding: 4px 3px;
+    }
 
+    /* Col 4: Count (N) — narrowed to 25px, starts at 160px */
     .plan-grid__table thead th.col-sticky:nth-child(4),
-    .plan-grid__table tbody td.col-sticky:nth-child(4) { left: 150px; min-width: 20px; max-width: 20px; }
+    .plan-grid__table tbody td.col-sticky:nth-child(4) {
+        left: 160px;
+        width: 25px;
+        min-width: 25px;
+        max-width: 25px;
+        font-size: 10px;
+        padding: 4px 3px;
+    }
 
+    /* Smaller padding and font for all gantt cells on mobile */
     .plan-grid__table th,
-    .plan-grid__table td { padding: 4px 5px; font-size: 10px; }
+    .plan-grid__table td {
+        padding: 4px 4px;
+        font-size: 10px;
+    }
 
-    .plan-grid__cell { font-size: 9px; padding: 1px 3px; min-width: 20px; }
-}
+    /* Smaller cell badges on mobile */
+    .plan-grid__cell {
+        font-size: 9px;
+        padding: 1px 2px;
+        min-width: 18px;
+    }
+
+} /* end @media (max-width: 768px) */
