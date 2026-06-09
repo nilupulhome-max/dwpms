@@ -224,27 +224,24 @@ async function loadDashboardStats() {
     document.getElementById('dashOverdue').textContent   = overdue;
 }
 
-
 // ============================================================
 // ACTUAL TAB — LOAD TASKS
 // - Fetches all maintenance plans from Supabase
 // - Filters by: This Week Pending / All Pending / All Tasks
+// - Uses year_week for "This Week" filter (not planned_date)
 // - Updates stat cards and renders task cards
 // ============================================================
 
 async function loadTasks(filterType, clickedButton) {
 
-    console.log('Loading tasks:', filterType);
 
     // Highlight active filter button
     document.querySelectorAll('.dashboard__filter-button')
         .forEach(btn => btn.classList.remove('active'));
 
-    if (clickedButton) {
-        clickedButton.classList.add('active');
-    }
+    if (clickedButton) clickedButton.classList.add('active');
 
-    // Fetch all plans ordered by date
+    // Fetch all plans ordered by planned date
     const { data, error } = await supabaseClient
         .from('maintenance_plan')
         .select('*')
@@ -259,23 +256,21 @@ async function loadTasks(filterType, clickedButton) {
     // Update Actual tab stat cards
     renderDashboardStats(data);
 
-    // Calculate week boundary for "This Week" filter
-    const today           = new Date();
-    const currentWeekEnd  = new Date(today);
-    currentWeekEnd.setDate(today.getDate() + (6 - today.getDay()));
+        // Current week string e.g. "2026-24"
+        const currentWeek = getWeekNumber(new Date());
 
     // Apply filter
     let filteredTasks = [];
 
-    if (filterType === 'weekPending') {
-        // Pending tasks due on or before end of current week
-        filteredTasks = data.filter(task => {
-            const planned = new Date(task.planned_date);
-            return task.status === 'Pending' && planned <= currentWeekEnd;
-        });
+   if (filterType === 'weekPending') {
+    // Show pending tasks that are this week OR overdue (past weeks)
+    filteredTasks = data.filter(task =>
+        task.status === 'Pending' &&
+        task.year_week <= currentWeek
+    );
 
     } else if (filterType === 'allPending') {
-        // All pending tasks regardless of date
+        // All pending tasks regardless of week
         filteredTasks = data.filter(task => task.status === 'Pending');
 
     } else {
@@ -314,10 +309,13 @@ function renderDashboardStats(taskData) {
 // - Clicking a card opens the checklist screen
 // ============================================================
 
+
 function renderTaskCards(taskData) {
 
-    const container = document.getElementById('dashboardTaskList');
+    const container   = document.getElementById('dashboardTaskList');
     container.innerHTML = '';
+
+    const currentWeek = getWeekNumber(new Date());
 
     taskData.forEach(task => {
 
@@ -327,13 +325,28 @@ function renderTaskCards(taskData) {
         const service  = task.service_type || '';
         const week     = task.year_week || '';
         const status   = task.status || '';
+
+        // Status badge class
         const badgeCls = status === 'Completed'
             ? 'task-row__badge--completed'
             : 'task-row__badge--pending';
 
+                    // Card color based on week status
+            let borderColor = '#1e3a8a';        // default blue
+            let bgColor     = '#ffffff';        // default white
+
+            if (status === 'Pending' && week < currentWeek) {
+                borderColor = '#dc2626';        // red — overdue
+                bgColor     = '#fff5f5';        // light red background
+            }
+            if (status === 'Pending' && week === currentWeek) {
+                borderColor = '#f59e0b';        // yellow — this week
+                bgColor     = '#fffbeb';        // light yellow background
+            }
         container.innerHTML += `
             <div class="task-row"
-                 onclick="openChecklist('${planId}', '${category}', '${machine}')">
+                     style="border-left-color:${borderColor}; background:${bgColor};"
+                    onclick="openChecklist('${planId}', '${category}', '${machine}')">
 
                 <!-- LEFT: Plan ID + Machine -->
                 <div class="task-row__left">
@@ -506,7 +519,7 @@ async function saveChecklist() {
 
         // Return to task list and refresh
         backToTasks();
-        loadTasks('weekPending');
+        refreshAll();
 
     } catch (err) {
         console.error('Unexpected error:', err);
@@ -898,10 +911,18 @@ async function saveSchedule() {
     document.getElementById('planNotes').value        = '';
 
     // Refresh gantt grid and dashboard stats
-    loadPlanGantt();
-    loadDashboardStats();
+    refreshAll();
 }
 
+// ============================================================
+// REFRESH ALL — updates gantt, dashboard stats, and task cards
+// Call this after any save/edit operation
+// ============================================================
+function refreshAll() {
+    loadPlanGantt();
+    loadDashboardStats();
+    loadTasks('weekPending');
+}
 
 // ============================================================
 // PLAN TAB — SHOW MESSAGE
@@ -919,6 +940,149 @@ function showPlanMessage(msg, type) {
     setTimeout(() => el.classList.add('hidden'), 4000);
 }
 
+// ============================================================
+// EDIT PLAN — OPEN MODAL
+// - Called when a gantt cell is clicked
+// - Blocked if plan is Completed
+// ============================================================
+function openEditModal(plan) {
+
+    if (plan.status === 'Completed') return;
+
+    window._editingPlanId = plan.planid;
+
+    // Populate week dropdown, pre-select current plan's week
+    populateWeekDropdown(plan.year_week || getWeekNumber(new Date()));
+
+    // Today's date as default
+    const today = new Date().toISOString().split('T')[0];
+
+    document.getElementById('editPlanId').textContent    = 'Plan ID: ' + plan.planid + ' — ' + plan.machine_no;
+    document.getElementById('editPlannedDate').value  = today;
+    document.getElementById('editServiceType').value     = plan.service_type  || 'Scheduled';
+    document.getElementById('editPlannedBy').value       = plan.planned_by    ||  currentUser || '';
+    document.getElementById('editNotes').value           = plan.notes         || '';
+    document.getElementById('editPlanMessage').classList.add('hidden');
+
+    document.getElementById('editPlanModal').classList.remove('hidden');
+}
+
+
+// ============================================================
+// EDIT PLAN — CLOSE MODAL
+// ============================================================
+function closeEditModal() {
+    document.getElementById('editPlanModal').classList.add('hidden');
+    window._editingPlanId = null;
+}
+
+// ============================================================
+// EDIT PLAN — SAVE
+// - Updates editable fields in Supabase
+// - Recalculates year_week from new planned date
+// ============================================================
+async function saveEditPlan() {
+
+    const planId      = window._editingPlanId;  // ADD THIS LINE
+    const plannedDate = document.getElementById('editPlannedDate').value;
+    const serviceType = document.getElementById('editServiceType').value;
+    const plannedBy   = document.getElementById('editPlannedBy').value.trim();
+    const notes       = document.getElementById('editNotes').value.trim();
+    const yearWeek    = document.getElementById('editPlanWeek').value.trim();
+
+    if (!plannedDate || !yearWeek) {
+        showEditMessage('Please fill planned date and plan week.', 'error');
+        return;
+    }
+
+    const { error } = await supabaseClient
+        .from('maintenance_plan')
+        .update({
+            planned_date:  plannedDate,
+            service_type:  serviceType,
+            planned_by:    plannedBy,
+            notes:         notes,
+            year_week:     yearWeek,
+            last_modified: new Date().toISOString()
+        })
+        .eq('planid', planId);
+
+    if (error) {
+        showEditMessage('Error saving: ' + error.message, 'error');
+        return;
+    }
+
+    showEditMessage('Saved successfully!', 'success');
+
+    setTimeout(() => {
+        closeEditModal();
+        refreshAll();
+    }, 1000);
+}
+
+
+// ============================================================
+// EDIT PLAN — SHOW MESSAGE
+// ============================================================
+function showEditMessage(msg, type) {
+    const el = document.getElementById('editPlanMessage');
+    el.textContent = msg;
+    el.className   = 'plan__message ' + type;
+    el.classList.remove('hidden');
+}
+
+// ============================================================
+// year and week dropdown for edit model
+// 
+// 
+// ============================================================
+
+function populateWeekDropdown(selectedWeek) {
+
+    
+    const year        = new Date().getFullYear();
+    const select      = document.getElementById('editPlanWeek');
+    const currentWeekNum = parseInt(selectedWeek.split('-')[1]);
+
+    select.innerHTML = '';
+
+    // Only show weeks from current plan week to week 52
+    for (let i = currentWeekNum; i <= 52; i++) {
+        const week  = String(i).padStart(2, '0');
+        const value = year + '-' + week;
+        const opt   = document.createElement('option');
+        opt.value   = value;
+        opt.textContent = value;
+        if (value === selectedWeek) opt.selected = true;
+        select.appendChild(opt);
+    }
+}
+
+// ============================================================
+// GANTT CELL CLICK
+// - Fetches full plan from Supabase
+// - Opens edit modal if not completed
+// ============================================================
+async function handleCellClick(planId) {
+
+    const { data, error } = await supabaseClient
+        .from('maintenance_plan')
+        .select('*')
+        .eq('planid', planId)
+        .single();
+
+    if (error || !data) {
+        console.error('Could not load plan:', error?.message);
+        return;
+    }
+
+    if (data.status === 'Completed') {
+        alert('Completed plans cannot be edited.');
+        return;
+    }
+
+    openEditModal(data);
+}
 
 // ============================================================
 // GANTT GRID — LOAD
@@ -1074,8 +1238,11 @@ function renderPlanGantt(data) {
                 const cls   = getCellClass(plan, w, currentWeek);
                 const tip   = encodeTooltip(plan);
                 bodyHtml += `<td><span class="plan-grid__cell ${cls}"
-                    onmouseenter="showTooltip(event,'${tip}')"
-                    onmouseleave="hideTooltip()">${label}</span></td>`;
+                            onmouseenter="showTooltip(event,'${tip}')"
+                            onmouseleave="hideTooltip()"
+                            onclick="handleCellClick('${plan.planid}')"
+                            style="cursor:${plan.status !== 'Completed' ? 'pointer' : 'default'};"
+                            >${label}</span></td>`;
             } else {
                 bodyHtml += '<td></td>';
             }

@@ -214,9 +214,54 @@
                 <!-- SUCCESS / ERROR MESSAGE -->
                 <div id="planMessage" class="plan__message hidden"></div>
 
+            <!-- ============================================================
+                EDIT PLAN MODAL
+                - Triggered by clicking a gantt cell (pending/delayed only)
+                - Completed tasks are blocked from editing
+            ============================================================ -->
+            <div id="editPlanModal" class="edit-modal hidden">
+                <div class="edit-modal__card">
+
+                    <div class="edit-modal__title">Edit Maintenance Plan</div>
+                    <div class="edit-modal__planid" id="editPlanId"></div>
+
+                    <div class="plan__field" style="margin-bottom:14px;">
+                        <label class="plan__label">Planned Date</label>
+                        <input type="date" id="editPlannedDate" class="plan__input">
+                    </div>
+                     <div class="plan__field" style="margin-bottom:14px;">
+                        <label class="plan__label">Plan Week</label>
+                        <select id="editPlanWeek" class="plan__input"></select>
+                    </div>
+                    <div class="plan__field" style="margin-bottom:14px;">
+                        <label class="plan__label">Service Type</label>
+                        <select id="editServiceType" class="plan__input">
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Planned">Planned</option>
+                        </select>
+                    </div>
+
+                    <div class="plan__field" style="margin-bottom:14px;">
+                        <label class="plan__label">Planned By</label>
+                        <input type="text" id="editPlannedBy" class="plan__input" placeholder="Name">
+                    </div>
+
+                    <div class="plan__field" style="margin-bottom:20px;">
+                        <label class="plan__label">Notes / Comments</label>
+                        <textarea id="editNotes" class="plan__input" rows="3" placeholder="Notes..."></textarea>
+                    </div>
+
+                    <div class="plan__actions">
+                        <button class="plan__btn-ghost" onclick="closeEditModal()">Cancel</button>
+                        <button class="plan__btn-primary" onclick="saveEditPlan()">Save Changes</button>
+                    </div>
+
+                    <div id="editPlanMessage" class="plan__message hidden"></div>
+
+                </div>
             </div>
             <!-- END PLAN FORM CARD -->
-
+    </div>
 
             <!-- ------------------------------------------------
                  GANTT GRID
@@ -240,6 +285,8 @@
 
 
         </div>
+  
+</div>
 
     </div>
     <!-- END TAB: PLAN -->
@@ -374,9 +421,10 @@
 
         </div>
 
+        
+
     </div>
     <!-- END TAB: DASHBOARD -->
-
 
 </div>
 <!-- END DASHBOARD SCREEN -->
