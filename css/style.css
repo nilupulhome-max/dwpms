@@ -231,7 +231,7 @@ body {
 
 /* Active tab: blue underline + blue text */
 .dashboard__tab.active {
-    border-bottom-color: #1a73e8;
+    border-bottom-color: #e81a4e;
     color: #1a73e8;
     background: #56eb56;
 }
