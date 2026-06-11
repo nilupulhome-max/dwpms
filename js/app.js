@@ -9,6 +9,23 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
 // ============================================================
+// FORMAT TIME — Sri Lanka (UTC+5:30)
+// - Converts UTC timestamp from Supabase to SL local time
+// - Use this for all date/time display in the UI
+// ============================================================
+function formatSLTime(utcString) {
+    if (!utcString) return '—';
+    return new Date(utcString).toLocaleString('en-LK', {
+        timeZone: 'Asia/Colombo',
+        day:    '2-digit',
+        month:  '2-digit',
+        year:   'numeric',
+        hour:   '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// ============================================================
 // GLOBAL STATE
 // - Tracks current user and active checklist context
 // ============================================================
@@ -26,7 +43,7 @@ let checklistResults     = [];
 // - Index used to match results on save
 // ============================================================
 
-const checklistItems = [
+/*const checklistItems = [
     "උෂ්ණත්ව මීටරයේ ක්‍රියාකාරීත්වය හා නිරවද්‍යතාවය",
     "කාලය සටහන් කිරීමේ මීටරයේ ක්‍රියාකාරීත්වය හා නිරවද්‍යතාවය",
     "ජල මීටරයේ ක්‍රියාකාරීත්වය හා නිරවද්‍යතාවය",
@@ -51,7 +68,33 @@ const checklistItems = [
     "වලනය වන කොටස් ආරක්ෂිතව ආවරණය කර ඇත",
     "ආරක්ෂිත දොර අගුල නියමිත ආකාරයට ක්‍රියාත්මක වේ",
     "ආරක්ෂිත සංඥා හා උපදෙස් පුවරු ස්ථාපනය කර ඇත"
-];
+];*/
+
+// ============================================================
+// CHECKLIST TEMPLATES — LOAD
+// - Fetches checklist items for a specific machine category
+// - Replaces hardcoded checklistItems array
+// ============================================================
+
+async function loadChecklistTemplate(machineCategory) {
+
+    console.log('Loading template for category:', machineCategory); // ADD
+
+    const { data, error } = await supabaseClient
+        .from('checklist_templates')
+        .select('item_text')
+        .eq('machine_category', machineCategory)
+        .eq('is_active', true)
+        .order('item_order', { ascending: true });
+
+    if (error) {
+        console.error('Checklist template load error:', error.message);
+        return [];
+    }
+
+    console.log('Items found:', data.length); // ADD
+    return data.map(d => d.item_text);
+}
 
 
 // ============================================================
@@ -359,6 +402,7 @@ function renderTaskCards(taskData) {
                 <div class="task-row__center">
                     <div class="task-row__service">${service}</div>
                     <div class="task-row__week">Week: ${week}</div>
+                    <div class="task-row__week">Date: ${formatSLTime(task.planned_date)}</div>
                 </div>
 
                 <!-- RIGHT: Status badge -->
@@ -379,7 +423,7 @@ function renderTaskCards(taskData) {
 // - Renders all checklist question rows
 // ============================================================
 
-function openChecklist(planId, category, machineNo) {
+/*function openChecklist(planId, category, machineNo) {
 
     console.log('Opening checklist for:', planId);
 
@@ -429,8 +473,114 @@ function openChecklist(planId, category, machineNo) {
             </div>
         `;
     });
+}*/
+
+// ============================================================
+// CHECKLIST — OPEN
+// - Scheduled task: shows full checklist items
+// - Planned task: shows single note from maintenance_plan
+//   with comment box and complete button
+// ============================================================
+
+function openChecklist(planId, category, machineNo) {
+
+    console.log('Opening checklist for:', planId);
+
+    currentPlanId          = planId;
+    currentMachineCategory = category;
+    currentMachineNo       = machineNo;
+    checklistResults       = [];
+
+    // Switch screens
+    document.getElementById('taskListScreen').classList.add('hidden');
+    document.getElementById('checklistScreen').classList.remove('hidden');
+
+    // Find the task from already loaded data to check service_type and notes
+    loadAndRenderChecklist(planId);
 }
 
+
+// ============================================================
+// CHECKLIST — LOAD AND RENDER
+// - Fetches full plan from Supabase
+// - Renders scheduled checklist OR planned note view
+// ============================================================
+
+async function loadAndRenderChecklist(planId) {
+
+    const { data, error } = await supabaseClient
+        .from('maintenance_plan')
+        .select('*')
+        .eq('planid', planId)
+        .single();
+
+    if (error || !data) return;
+
+    console.log('Plan category:', data.machine_category);
+console.log('Service type:', data.service_type);
+
+const items = await loadChecklistTemplate(data.machine_category);
+console.log('Checklist items loaded:', items.length);
+
+
+    const container = document.getElementById('checklistContainer');
+    container.innerHTML = '';
+
+    if (data.service_type === 'Scheduled') {
+
+        // Load checklist items for this machine category from Supabase
+        const items = await loadChecklistTemplate(data.machine_category);
+
+        if (!items.length) {
+            container.innerHTML = '<div style="padding:16px;color:#6b7280;">No checklist template found for this machine category.</div>';
+            return;
+        }
+
+        // Store loaded items globally for saveChecklist to use
+        window._currentChecklistItems = items;
+
+        items.forEach((item, index) => {
+            container.innerHTML += `
+                <div class="check-row">
+                    <div class="check-text">${item}</div>
+                    <div class="check-bottom">
+                        <div class="check-buttons">
+                            <button class="btn-yes checklist-option-btn"
+                                    onclick="setResult(${index}, 'YES', this)">YES</button>
+                            <button class="btn-no checklist-option-btn"
+                                    onclick="setResult(${index}, 'NO', this)">NO</button>
+                            <button class="btn-na checklist-option-btn"
+                                    onclick="setResult(${index}, 'N/A', this)">N/A</button>
+                        </div>
+                        <div class="check-comment">
+                            <input type="text" id="comment_${index}" placeholder="Comment">
+                        </div>
+                    </div>
+                </div>`;
+        });
+
+    } else {
+
+        // Planned task — note + comment
+        window._currentChecklistItems = [];
+        const noteText = data.notes || 'No notes added for this plan.';
+
+        container.innerHTML = `
+            <div class="check-row">
+                <div class="check-text" style="color:#1e3a8a; font-size:14px;">📋 Plan Note</div>
+                <div style="background:#f0f4ff; border:1px solid #c7d7f9; border-radius:8px;
+                            padding:12px 14px; font-size:14px; color:#1e3a8a; margin-top:8px; line-height:1.6;">
+                    ${noteText}
+                </div>
+            </div>
+            <div class="check-row" style="margin-top:12px;">
+                <div class="check-text">Comment</div>
+                <textarea id="plannedComment" class="plan__input" rows="3" placeholder="Enter your comment..."></textarea>
+            </div>`;
+
+        window._plannedNote = noteText;
+    }
+}
 
 // ============================================================
 // CHECKLIST — SET RESULT
@@ -473,7 +623,7 @@ function backToTasks() {
 // - Returns to task list and refreshes data
 // ============================================================
 
-async function saveChecklist() {
+/*async function saveChecklist() {
 
     console.log('Saving checklist for plan:', currentPlanId);
 
@@ -518,6 +668,88 @@ async function saveChecklist() {
         alert('Checklist saved successfully!');
 
         // Return to task list and refresh
+        backToTasks();
+        refreshAll();
+
+    } catch (err) {
+        console.error('Unexpected error:', err);
+        alert(err.message);
+    }
+}*/
+
+async function saveChecklist() {
+
+    console.log('Saving checklist for plan:', currentPlanId);
+
+    try {
+
+        let rowsToInsert = [];
+
+        // Fetch plan to check service_type
+        const { data: plan } = await supabaseClient
+            .from('maintenance_plan')
+            .select('service_type, notes')
+            .eq('planid', currentPlanId)
+            .single();
+
+        if (plan.service_type === 'Scheduled') {
+
+            // Full checklist rows
+            rowsToInsert = window._currentChecklistItems.map((item, i) => ({
+                plan_id:          currentPlanId,
+                machine_category: currentMachineCategory,
+                machine_no:       currentMachineNo,
+                technician:       currentUser,
+                attribute_name:   item,
+                result_value:     checklistResults[i]?.result_value || 'N/A',
+                comments:         document.getElementById(`comment_${i}`)?.value || '',
+                status:           'Completed',
+                is_synced:        false
+            }));
+
+        } else {
+
+            // Single row for planned task
+            const comment = document.getElementById('plannedComment')?.value || '';
+
+            rowsToInsert = [{
+                plan_id:          currentPlanId,
+                machine_category: currentMachineCategory,
+                machine_no:       currentMachineNo,
+                technician:       currentUser,
+                attribute_name:   plan.notes || 'Plan Note',
+                result_value:     'Completed',
+                comments:         comment,
+                status:           'Completed',
+                is_synced:        false
+            }];
+        }
+
+        // Insert into maintenance_actual
+        const { error: insertError } = await supabaseClient
+            .from('maintenance_actual')
+            .insert(rowsToInsert);
+
+        if (insertError) {
+            console.error('Insert error:', insertError);
+            alert(insertError.message);
+            return;
+        }
+
+        // Update plan status, completed_by, comments, completed_date
+    const { error: updateError } = await supabaseClient
+    .from('maintenance_plan')
+    .update({
+        status:         'Completed',
+        completed_by:   currentUser,
+        comments:       plan.service_type === 'Scheduled'
+                            ? '' 
+                            : document.getElementById('plannedComment')?.value || '',
+        completed_date: new Date().toISOString()
+    })
+    .eq('planid', currentPlanId);
+
+        alert('Saved successfully!');
         backToTasks();
         refreshAll();
 
@@ -1331,8 +1563,9 @@ function encodeTooltip(plan) {
         'Status: '       + (plan.status        || '—'),
         'Planned by: '   + (plan.planned_by    || '—'),
         'Notes: '        + (plan.notes         || '—'),
-        'Completed by: ' + (plan.completed_by  || '—'),
-        'Completed: '    + (plan.completed_date || '—'),
+        'Completed: '    + formatSLTime(plan.completed_date),
+        'Modified: '     + formatSLTime(plan.last_modified),
+        'Created: '      + formatSLTime(plan.created_date),
     ].join('|');
     return encodeURIComponent(lines);
 }
