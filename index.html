@@ -11,6 +11,9 @@
     <!-- CSS -->
     <link rel="stylesheet" href="css/style.css">
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- SUPABASE -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -420,7 +423,51 @@
             </div>
 
         </div>
+        <!-- ============================================================
+     TAB: REPORTS
+     - Report 1: Completion Rate by Machine (bar chart)
+     - Report 2: Weekly Schedule Status (bar chart)
+     - Report 3: Overdue Tasks Summary (table)
+============================================================ -->
 
+ <div class="reports__container">
+
+        <!-- ------------------------------------------------
+             REPORT 1 — Completion Rate by Machine
+        ------------------------------------------------ -->
+        <div class="reports__card">
+            <div class="reports__card-header">
+                <div class="reports__card-title">Completion Rate by Machine</div>
+                <button class="reports__download-btn" onclick="downloadReport1CSV()">⬇ Download CSV</button>
+            </div>
+            <div class="reports__chart-wrap">
+                <canvas id="chartMachine"></canvas>
+            </div>
+        </div>
+
+        <!-- ------------------------------------------------
+             REPORT 2 — Weekly Schedule Status
+        ------------------------------------------------ -->
+        <div class="reports__card">
+            <div class="reports__card-header">
+                <div class="reports__card-title">Weekly Schedule Status</div>
+                <button class="reports__download-btn" onclick="downloadReport2CSV()">⬇ Download CSV</button>
+            </div>
+            <div class="reports__chart-wrap">
+                <canvas id="chartWeekly"></canvas>
+            </div>
+        </div>
+
+        <!-- ------------------------------------------------
+             REPORT 3 — Overdue Tasks Summary
+        ------------------------------------------------ -->
+        <div class="reports__card">
+            <div class="reports__card-header">
+                <div class="reports__card-title">Overdue Tasks Summary</div>
+                <button class="reports__download-btn" onclick="downloadReport3CSV()">⬇ Download CSV</button>
+            </div>
+            <div id="reportOverdueTable"></div>
+        </div>
         
 
     </div>

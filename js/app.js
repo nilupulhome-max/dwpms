@@ -26,6 +26,14 @@ function formatSLTime(utcString) {
 }
 
 // ============================================================
+// REPORTS — GLOBAL CHART INSTANCES
+// Stored to destroy before redrawing on tab revisit
+// ============================================================
+let chartMachineInstance = null;
+let chartWeeklyInstance  = null;
+
+
+// ============================================================
 // GLOBAL STATE
 // - Tracks current user and active checklist context
 // ============================================================
@@ -224,6 +232,7 @@ function switchTab(name, btn) {
 
     if (name === 'dashboard') {
         loadDashboardStats(); // load summary stat cards
+          loadReports();   
     }
 }
 
@@ -1111,8 +1120,7 @@ async function saveSchedule() {
         planned_by:         createdBy,
         created_date:       now,
         status:             'Pending',
-        is_synced:          false,
-        last_modified:      now
+        is_synced:          false
     }));
 
     // Insert all rows into Supabase
@@ -1234,8 +1242,7 @@ async function saveEditPlan() {
             service_type:  serviceType,
             planned_by:    plannedBy,
             notes:         notes,
-            year_week:     yearWeek,
-            last_modified: new Date().toISOString()
+            year_week:     yearWeek
         })
         .eq('planid', planId);
 
@@ -1563,6 +1570,7 @@ function encodeTooltip(plan) {
         'Status: '       + (plan.status        || '—'),
         'Planned by: '   + (plan.planned_by    || '—'),
         'Notes: '        + (plan.notes         || '—'),
+        'Completed by: ' + (plan.completed_by  || '—'),
         'Completed: '    + formatSLTime(plan.completed_date),
         'Modified: '     + formatSLTime(plan.last_modified),
         'Created: '      + formatSLTime(plan.created_date),
@@ -1633,4 +1641,306 @@ function scrollToCurrentWeek(currentWeek, weeks) {
 
     // ~40px per week column, offset left by 100px for context
     scroll.scrollLeft = Math.max(0, (idx * 40) - 100);
+}
+
+
+// ============================================================
+// REPORTS — LOAD ALL
+// Called when Dashboard tab is opened
+// Fetches data once and renders all 3 reports
+// ============================================================
+async function loadReports() {
+
+    const { data, error } = await supabaseClient
+        .from('maintenance_plan')
+        .select('*');
+
+    if (error) {
+        console.error('Reports load error:', error.message);
+        return;
+    }
+
+    renderReport1(data);  // Completion rate by machine
+    renderReport2(data);  // Weekly schedule status
+    renderReport3(data);  // Overdue tasks table
+}
+
+
+// ============================================================
+// REPORT 1 — COMPLETION RATE BY MACHINE
+// Bar chart: each machine, grouped completed vs pending
+// ============================================================
+function renderReport1(data) {
+
+    // Group by machine_no
+    const machines = {};
+    data.forEach(row => {
+        if (!machines[row.machine_no]) {
+            machines[row.machine_no] = { completed: 0, pending: 0 };
+        }
+        if (row.status === 'Completed') machines[row.machine_no].completed++;
+        else                            machines[row.machine_no].pending++;
+    });
+
+    const labels    = Object.keys(machines).sort();
+    const completed = labels.map(m => machines[m].completed);
+    const pending   = labels.map(m => machines[m].pending);
+
+    // Destroy previous chart instance if exists
+    if (chartMachineInstance) chartMachineInstance.destroy();
+
+    const ctx = document.getElementById('chartMachine').getContext('2d');
+
+    chartMachineInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label:           'Completed',
+                    data:            completed,
+                    backgroundColor: '#86efac',
+                    borderColor:     '#16a34a',
+                    borderWidth:     1,
+                    borderRadius:    4
+                },
+                {
+                    label:           'Pending',
+                    data:            pending,
+                    backgroundColor: '#fca5a5',
+                    borderColor:     '#dc2626',
+                    borderWidth:     1,
+                    borderRadius:    4
+                }
+            ]
+        },
+        options: {
+            responsive:          true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                x: { stacked: false },
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    // Store data for CSV download
+    window._report1Data = { labels, completed, pending };
+}
+
+
+// ============================================================
+// REPORT 2 — WEEKLY SCHEDULE STATUS
+// Bar chart: each week, grouped completed vs pending
+// Only shows weeks that have data
+// ============================================================
+function renderReport2(data) {
+
+    // Group by year_week
+    const weeks = {};
+    data.forEach(row => {
+        if (!row.year_week) return;
+        if (!weeks[row.year_week]) {
+            weeks[row.year_week] = { completed: 0, pending: 0 };
+        }
+        if (row.status === 'Completed') weeks[row.year_week].completed++;
+        else                            weeks[row.year_week].pending++;
+    });
+
+    const labels    = Object.keys(weeks).sort();
+    const completed = labels.map(w => weeks[w].completed);
+    const pending   = labels.map(w => weeks[w].pending);
+
+    // Destroy previous chart instance if exists
+    if (chartWeeklyInstance) chartWeeklyInstance.destroy();
+
+    const ctx = document.getElementById('chartWeekly').getContext('2d');
+
+    chartWeeklyInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label:           'Completed',
+                    data:            completed,
+                    backgroundColor: '#93c5fd',
+                    borderColor:     '#1e3a8a',
+                    borderWidth:     1,
+                    borderRadius:    4
+                },
+                {
+                    label:           'Pending',
+                    data:            pending,
+                    backgroundColor: '#fcd34d',
+                    borderColor:     '#d97706',
+                    borderWidth:     1,
+                    borderRadius:    4
+                }
+            ]
+        },
+        options: {
+            responsive:          true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                x: { stacked: false },
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+
+    // Store data for CSV download
+    window._report2Data = { labels, completed, pending };
+}
+
+
+// ============================================================
+// REPORT 3 — OVERDUE TASKS SUMMARY
+// Table: all pending tasks past current week
+// ============================================================
+function renderReport3(data) {
+
+    const currentWeek = getWeekNumber(new Date());
+
+    const overdue = data.filter(row =>
+        row.status === 'Pending' &&
+        row.year_week < currentWeek
+    );
+
+    const container = document.getElementById('reportOverdueTable');
+
+    if (!overdue.length) {
+        container.innerHTML = '<div style="padding:16px; color:#16a34a; font-size:13px;">✅ No overdue tasks.</div>';
+        window._report3Data = [];
+        return;
+    }
+
+    let html = `
+        <table class="reports__table">
+            <thead>
+                <tr>
+                    <th>Plan ID</th>
+                    <th>Machine</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Week</th>
+                    <th>Planned Date</th>
+                    <th>Planned By</th>
+                    <th>Weeks Overdue</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    overdue.forEach(row => {
+        const weeksOverdue = parseInt(currentWeek.split('-')[1]) - parseInt(row.year_week.split('-')[1]);
+        html += `
+            <tr>
+                <td>${row.planid}</td>
+                <td>${row.machine_no}</td>
+                <td>${row.machine_category}</td>
+                <td>${row.service_type}</td>
+                <td>${row.year_week}</td>
+                <td>${row.planned_date || '—'}</td>
+                <td>${row.planned_by  || '—'}</td>
+                <td><span class="reports__overdue-badge">${weeksOverdue}W overdue</span></td>
+            </tr>`;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+
+    // Store data for CSV download
+    window._report3Data = overdue;
+}
+
+
+// ============================================================
+// CSV DOWNLOAD — REPORT 1
+// Completion rate by machine
+// ============================================================
+function downloadReport1CSV() {
+
+    const d = window._report1Data;
+    if (!d) return;
+
+    let csv = 'Machine,Completed,Pending,Total\n';
+    d.labels.forEach((label, i) => {
+        const total = d.completed[i] + d.pending[i];
+        csv += `${label},${d.completed[i]},${d.pending[i]},${total}\n`;
+    });
+
+    downloadCSV(csv, 'completion_rate_by_machine.csv');
+}
+
+
+// ============================================================
+// CSV DOWNLOAD — REPORT 2
+// Weekly schedule status
+// ============================================================
+function downloadReport2CSV() {
+
+    const d = window._report2Data;
+    if (!d) return;
+
+    let csv = 'Week,Completed,Pending,Total\n';
+    d.labels.forEach((label, i) => {
+        const total = d.completed[i] + d.pending[i];
+        csv += `${label},${d.completed[i]},${d.pending[i]},${total}\n`;
+    });
+
+    downloadCSV(csv, 'weekly_schedule_status.csv');
+}
+
+
+// ============================================================
+// CSV DOWNLOAD — REPORT 3
+// Overdue tasks
+// ============================================================
+function downloadReport3CSV() {
+
+    const d = window._report3Data;
+    if (!d || !d.length) return;
+
+    const currentWeek = getWeekNumber(new Date());
+
+    let csv = 'Plan ID,Machine,Category,Type,Week,Planned Date,Planned By,Weeks Overdue\n';
+    d.forEach(row => {
+        const weeksOverdue = parseInt(currentWeek.split('-')[1]) - parseInt(row.year_week.split('-')[1]);
+        csv += `${row.planid},${row.machine_no},${row.machine_category},${row.service_type},${row.year_week},${row.planned_date || ''},${row.planned_by || ''},${weeksOverdue}\n`;
+    });
+
+    downloadCSV(csv, 'overdue_tasks.csv');
+}
+
+
+// ============================================================
+// CSV DOWNLOAD — HELPER
+// Creates and triggers a CSV file download
+// ============================================================
+function downloadCSV(csvContent, filename) {
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.display = 'none';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
