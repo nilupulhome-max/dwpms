@@ -1477,20 +1477,63 @@ function renderPlanGantt(data) {
                 const label = getCellLabel(plan, w, currentWeek);
                 const cls   = getCellClass(plan, w, currentWeek);
                 const tip   = encodeTooltip(plan);
-                bodyHtml += `<td><span class="plan-grid__cell ${cls}"
+
+                // Detect mobile
+                const isMobile = window.innerWidth <= 768;
+                    // Cell html — different behavior for mobile vs desktop
+                    if (isMobile) {
+                        // Mobile: single tap = tooltip, double tap = edit
+                        bodyHtml += `<td><span class="plan-grid__cell ${cls}"
+                            ontouchstart="handleCellTouch('${plan.planid}', event, '${tip}')"
+                            style="cursor:${plan.status !== 'Completed' ? 'pointer' : 'default'};"
+                            >${label}</span></td>`;
+                    } else {
+                        // Desktop: hover = tooltip, click = edit
+                        bodyHtml += `<td><span class="plan-grid__cell ${cls}"
                             onmouseenter="showTooltip(event,'${tip}')"
                             onmouseleave="hideTooltip()"
                             onclick="handleCellClick('${plan.planid}')"
                             style="cursor:${plan.status !== 'Completed' ? 'pointer' : 'default'};"
                             >${label}</span></td>`;
-            } else {
+                    }
+
+            } 
+            else {
                 bodyHtml += '<td></td>';
             }
         });
 
         bodyHtml += '</tr>';
     });
+// ============================================================
+// MOBILE CELL TOUCH
+// Single tap — show tooltip
+// Double tap — open edit modal
+// ============================================================
+let _lastTap     = 0;
+let _lastTapId   = null;
 
+function handleCellTouch(planId, event, encoded) {
+
+    event.preventDefault();
+    const now = Date.now();
+
+    if (_lastTapId === planId && now - _lastTap < 350) {
+        // Double tap — open edit
+        hideTooltip();
+        handleCellClick(planId);
+        _lastTap   = 0;
+        _lastTapId = null;
+    } else {
+        // Single tap — show tooltip
+        _lastTap   = now;
+        _lastTapId = planId;
+        showTooltip(event.touches[0], encoded);
+
+        // Auto hide tooltip after 2 seconds
+        setTimeout(() => hideTooltip(), 2000);
+    }
+}
     // --------------------------------------------------------
     // INJECT INTO DOM
     // colgroup injected first directly on table element
@@ -1859,7 +1902,10 @@ function renderReport3(data) {
     });
 
     html += '</tbody></table>';
-    container.innerHTML = html;
+    container.innerHTML = `
+    <div class="reports__table-wrap">
+        ${html}
+    </div>`;
 
     // Store data for CSV download
     window._report3Data = overdue;

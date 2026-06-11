@@ -1043,6 +1043,36 @@ body {
 .dash__number--completed { color: #16a34a; }    /* green */
 .dash__number--overdue   { color: #dc2626; }    /* red */
 
+/* Dashboard tab mobile */
+.dash__container {
+    padding: 8px;
+}
+
+.dash__grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+/* Reports container scrollable on mobile */
+.reports__container {
+    padding: 8px;
+}
+
+/* Overdue table — scrollable on mobile */
+.reports__card {
+    padding: 12px;
+}
+
+.reports__table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Charts smaller on mobile */
+.reports__chart-wrap {
+    height: 180px;
+}
 
 /* ============================================================
    13. MOBILE OVERRIDES
