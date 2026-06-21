@@ -109,6 +109,7 @@
         <button class="dashboard__tab"        onclick="switchTab('Actual', this)">Actual</button>
         <button class="dashboard__tab"        onclick="switchTab('review', this)">Review</button>
         <button class="dashboard__tab"        onclick="switchTab('dashboard', this)">Dashboard</button>
+        <button class="dashboard__tab"        onclick="switchTab('admin', this)">Admin</button>
     </div>
     <!-- END TAB BAR -->
 
@@ -211,7 +212,7 @@
 
                 <!-- ACTION BUTTONS -->
                 <div class="plan__actions">
-                    <button class="plan__btn-ghost" onclick="previewAndConfirm()">Preview</button>
+                    <button class="plan__btn-ghost" onclick="previewAndConfirm()">Preview & Create</button>
                     <button class="plan__btn-danger" onclick="openBreakdownModal()">⚠ Report Breakdown</button>
                 </div>
 
@@ -298,9 +299,15 @@
                         <input type="datetime-local" id="bdBreakdownStart" class="plan__input">
                     </div>
 
-                    <div class="plan__field" style="margin-bottom:20px;">
+                    <div class="plan__field" style="margin-bottom:14px;">
                         <label class="plan__label">Cause / Description</label>
                         <textarea id="bdCause" class="plan__input" rows="3" placeholder="What happened..."></textarea>
+                    </div>
+
+                    <div class="plan__field" style="margin-bottom:20px;">
+                        <label class="plan__label">Reported By</label>
+                        <input type="text" id="bdReportedBy" class="plan__input" readonly
+                               style="background:#f0f4ff; color:#1e3a8a; font-weight:600; cursor:default;">
                     </div>
 
                     <div class="plan__actions">
@@ -356,6 +363,12 @@
 
         <div class="dashboard__container">
 
+            <!-- YEAR FILTER -->
+            <div class="dashboard__year-filter">
+                <label class="dashboard__year-label">Year</label>
+                <select id="actualYearFilter" class="dashboard__year-select" onchange="onActualYearChange()"></select>
+            </div>
+
             <!-- STAT CARDS -->
             <div class="dashboard__stats-grid">
 
@@ -380,8 +393,13 @@
                 </div>
 
                 <div class="dashboard__stat-card dashboard__stat-card--danger">
-                    <h2>Breakdowns</h2>
+                    <h2>Reported Breakdowns</h2>
                     <p id="dashboardBreakdownCount">0</p>
+                </div>
+
+                <div class="dashboard__stat-card dashboard__stat-card--warning">
+                    <h2>Pending Breakdowns</h2>
+                    <p id="dashboardPendingBreakdownCount">0</p>
                 </div>
 
             </div>
@@ -656,10 +674,71 @@
                 <div style="padding:16px; color:#6b7280; font-size:13px;">Select a machine to view its history.</div>
             </div>
         </div>
-        
+
+    </div><!-- end reports__container -->
 
     </div>
     <!-- END TAB: DASHBOARD -->
+
+
+    <!-- ============================================================
+         TAB: ADMIN
+         - Backup & Restore (export/import all tables as JSON)
+         - Data Management (view, add, edit, delete any table row)
+    ============================================================ -->
+    <div id="tab-admin" class="dashboard__tab-content hidden">
+        <div class="admin__container">
+
+            <!-- BACKUP & RESTORE -->
+            <div class="admin__card">
+                <div class="admin__card-title">Backup &amp; Restore</div>
+                <div class="admin__backup-row">
+                    <button class="admin__btn-export" onclick="exportAllData()">⬇ Export All (JSON)</button>
+                    <label class="admin__btn-import">
+                        ⬆ Import JSON
+                        <input type="file" id="adminImportFile" accept=".json"
+                               style="display:none;" onchange="importData(this)">
+                    </label>
+                </div>
+                <div id="adminBackupMessage" class="plan__message hidden"></div>
+            </div>
+
+            <!-- DATA MANAGEMENT -->
+            <div class="admin__card">
+                <div class="admin__card-title">Data Management</div>
+                <div class="admin__table-tabs">
+                    <button class="admin__table-tab" onclick="loadAdminTable('maintenance_plan', this)">Maintenance Plan</button>
+                    <button class="admin__table-tab" onclick="loadAdminTable('maintenance_actual', this)">Maintenance Actual</button>
+                    <button class="admin__table-tab" onclick="loadAdminTable('machinetypes', this)">Machine Types</button>
+                    <button class="admin__table-tab" onclick="loadAdminTable('machine_categories', this)">Machine Categories</button>
+                    <button class="admin__table-tab" onclick="loadAdminTable('checklist_templates', this)">Checklist Templates</button>
+                </div>
+                <div id="adminTableContainer">
+                    <div style="padding:16px; color:#6b7280; font-size:13px;">Select a table above to view and edit records.</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- END TAB: ADMIN -->
+
+
+    <!-- ============================================================
+         ADMIN — EDIT / ADD MODAL
+    ============================================================ -->
+    <div id="adminEditModal" class="edit-modal hidden">
+        <div class="edit-modal__card admin__edit-card">
+            <div class="edit-modal__title" id="adminEditTitle">Edit Record</div>
+            <div id="adminEditFields" class="admin__edit-fields"></div>
+            <div class="plan__actions" style="margin-top:16px;">
+                <button class="plan__btn-ghost"    onclick="closeAdminEdit()">Cancel</button>
+                <button class="plan__btn-primary"  onclick="saveAdminEdit()">Save</button>
+            </div>
+            <div id="adminEditMessage" class="plan__message hidden"></div>
+        </div>
+    </div>
+    <!-- END ADMIN EDIT MODAL -->
+
 
 </div>
 <!-- END DASHBOARD SCREEN -->

@@ -142,6 +142,7 @@ async function loginUser() {
     document.querySelector('.dashboard__tab').click();
 
     // Pre-load Actual tab tasks in background
+    populateActualYearFilter();
     loadTasks('weekPending', document.querySelector('.dashboard__filter-button'));
 }
 
@@ -198,6 +199,7 @@ window.addEventListener('load', async () => {
     switchTab('plan', document.querySelector('.dashboard__tab'));
 
     // Pre-load tasks for Actual tab
+    populateActualYearFilter();
     loadTasks('weekPending');
 });
 
@@ -230,13 +232,22 @@ function switchTab(name, btn) {
         loadPlanGantt();     // render gantt grid
     }
 
+    if (name === 'Actual') {
+        populateActualYearFilter();
+        loadTasks(window._actualFilterType || 'weekPending');
+    }
+
     if (name === 'dashboard') {
         loadDashboardStats(); // load summary stat cards
-          loadReports();   
+          loadReports();
     }
 
     if (name === 'review') {
         loadReviewTasks(); // load tasks awaiting admin sign-off
+    }
+
+    if (name === 'admin') {
+        // nothing to auto-load — user picks a table
     }
 }
 
@@ -342,15 +353,43 @@ async function renderDowntimeBanner(data) {
 }
 
 // ============================================================
+// ACTUAL TAB — YEAR FILTER
+// - Populates year dropdown with current year ± 2
+// - Defaults to current year on first load
+// ============================================================
+
+function populateActualYearFilter() {
+    const select = document.getElementById('actualYearFilter');
+    if (!select) return;
+
+    const currentYear = new Date().getFullYear();
+    if (select.options.length > 0) return; // already populated
+
+    for (let y = currentYear - 2; y <= currentYear; y++) {
+        const opt = document.createElement('option');
+        opt.value       = String(y);
+        opt.textContent = String(y);
+        if (y === currentYear) opt.selected = true;
+        select.appendChild(opt);
+    }
+}
+
+function onActualYearChange() {
+    loadTasks(window._actualFilterType || 'weekPending');
+}
+
+
+// ============================================================
 // ACTUAL TAB — LOAD TASKS
 // - Fetches all maintenance plans from Supabase
-// - Filters by: This Week Pending / All Pending / All Tasks
+// - Filters by selected year, then by: This Week Pending / All Pending / All Tasks
 // - Uses year_week for "This Week" filter (not planned_date)
 // - Updates stat cards and renders task cards
 // ============================================================
 
 async function loadTasks(filterType, clickedButton) {
 
+    window._actualFilterType = filterType;
 
     // Highlight active filter button
     document.querySelectorAll('.dashboard__filter-button')
@@ -370,29 +409,38 @@ async function loadTasks(filterType, clickedButton) {
         return;
     }
 
-    // Update Actual tab stat cards
-    renderDashboardStats(data);
+    // Get selected year (default to current year if selector not ready)
+    const yearSelect  = document.getElementById('actualYearFilter');
+    const selectedYear = yearSelect ? yearSelect.value : String(new Date().getFullYear());
 
-        // Current week string e.g. "2026-24"
-        const currentWeek = getWeekNumber(new Date());
+    // Filter all data to the selected year
+    const yearData = data.filter(r =>
+        (r.planned_date || r.breakdown_start || '').startsWith(selectedYear)
+    );
 
-    // Apply filter
+    // Update Actual tab stat cards using year-filtered data
+    renderDashboardStats(yearData);
+
+    // Current week string e.g. "2026-24"
+    const currentWeek = getWeekNumber(new Date());
+
+    // Apply task list filter on year-filtered data
     let filteredTasks = [];
 
-   if (filterType === 'weekPending') {
-    // Show pending tasks that are this week OR overdue (past weeks)
-    filteredTasks = data.filter(task =>
-        task.status === 'Pending' &&
-        task.year_week <= currentWeek
-    );
+    if (filterType === 'weekPending') {
+        // Show pending tasks that are this week OR overdue (past weeks)
+        filteredTasks = yearData.filter(task =>
+            task.status === 'Pending' &&
+            task.year_week <= currentWeek
+        );
 
     } else if (filterType === 'allPending') {
         // All pending tasks regardless of week
-        filteredTasks = data.filter(task => task.status === 'Pending');
+        filteredTasks = yearData.filter(task => task.status === 'Pending');
 
     } else {
         // All tasks unfiltered
-        filteredTasks = data;
+        filteredTasks = yearData;
     }
 
     // Render filtered task cards
@@ -408,17 +456,19 @@ async function loadTasks(filterType, clickedButton) {
 
 function renderDashboardStats(taskData) {
 
-    const planned    = taskData.filter(t => t.service_type === 'Planned').length;
-    const scheduled  = taskData.filter(t => t.service_type === 'Scheduled').length;
-    const pending    = taskData.filter(t => t.status === 'Pending').length;
-    const completed  = taskData.filter(t => t.status === 'Completed').length;
-    const breakdowns = taskData.filter(t => t.service_type === 'Breakdown').length;
+    const planned           = taskData.filter(t => t.service_type === 'Planned').length;
+    const scheduled         = taskData.filter(t => t.service_type === 'Scheduled').length;
+    const pending           = taskData.filter(t => t.status === 'Pending').length;
+    const completed         = taskData.filter(t => t.status === 'Completed').length;
+    const breakdowns        = taskData.filter(t => t.service_type === 'Breakdown').length;
+    const pendingBreakdowns = taskData.filter(t => t.service_type === 'Breakdown' && t.status === 'Pending').length;
 
-    document.getElementById('dashboardPlannedCount').innerText   = planned;
-    document.getElementById('dashboardScheduledCount').innerText = scheduled;
-    document.getElementById('dashboardPendingCount').innerText   = pending;
-    document.getElementById('dashboardCompletedCount').innerText = completed;
-    document.getElementById('dashboardBreakdownCount').innerText = breakdowns;
+    document.getElementById('dashboardPlannedCount').innerText          = planned;
+    document.getElementById('dashboardScheduledCount').innerText        = scheduled;
+    document.getElementById('dashboardPendingCount').innerText          = pending;
+    document.getElementById('dashboardCompletedCount').innerText        = completed;
+    document.getElementById('dashboardBreakdownCount').innerText        = breakdowns;
+    document.getElementById('dashboardPendingBreakdownCount').innerText = pendingBreakdowns;
 }
 
 
@@ -618,6 +668,7 @@ console.log('Checklist items loaded:', items.length);
                 <div class="check-text" style="color:#dc2626; font-size:14px;">⚠ Breakdown Report</div>
                 <div style="background:#fff5f5; border:1px solid #fca5a5; border-radius:8px;
                             padding:12px 14px; font-size:14px; color:#7f1d1d; margin-top:8px; line-height:1.6;">
+                    Reported by: <strong>${data.planned_by || '—'}</strong><br>
                     Breakdown start: ${formatSLTime(data.breakdown_start)}<br>
                     Cause: ${data.notes || '—'}
                 </div>
@@ -651,6 +702,12 @@ console.log('Checklist items loaded:', items.length);
         // Store loaded items globally for saveChecklist to use
         window._currentChecklistItems = items;
 
+        container.innerHTML = `
+            <div style="background:#f0f4ff; border:1px solid #c7d7f9; border-radius:8px;
+                        padding:10px 14px; font-size:13px; color:#1e3a8a; margin-bottom:10px;">
+                Planned by: <strong>${data.planned_by || '—'}</strong>
+            </div>`;
+
         items.forEach((item, index) => {
             container.innerHTML += `
                 <div class="check-row">
@@ -682,6 +739,7 @@ console.log('Checklist items loaded:', items.length);
                 <div class="check-text" style="color:#1e3a8a; font-size:14px;">📋 Plan Note</div>
                 <div style="background:#f0f4ff; border:1px solid #c7d7f9; border-radius:8px;
                             padding:12px 14px; font-size:14px; color:#1e3a8a; margin-top:8px; line-height:1.6;">
+                    Planned by: <strong>${data.planned_by || '—'}</strong><br><br>
                     ${noteText}
                 </div>
             </div>
@@ -1284,6 +1342,7 @@ function openBreakdownModal() {
 
     document.getElementById('bdMachineId').innerHTML = '<option value="">Select Machine ID</option>';
     document.getElementById('bdCause').value = '';
+    document.getElementById('bdReportedBy').value = document.getElementById('loggedUserName').textContent.trim();
     document.getElementById('breakdownMessage').classList.add('hidden');
 
     // Default breakdown start to right now (local time, for datetime-local input)
@@ -1352,18 +1411,19 @@ async function saveBreakdownReport() {
     const now       = new Date().toISOString();
 
     const row = {
-        planid:           planId,
-        machine_category: machineType,
-        machine_no:       machineId,
-        service_type:     'Breakdown',
-        year_week:        getWeekNumber(new Date(breakdownStart)),
-        planned_date:     breakdownStart,
-        breakdown_start:  new Date(breakdownStart).toISOString(),
-        notes:            cause,
-        planned_by:       createdBy,
-        created_date:     now,
-        status:           'Pending',
-        is_synced:        false
+        planid:             planId,
+        machine_category:   machineType,
+        machine_no:         machineId,
+        service_type:       'Breakdown',
+        schedule_frequency: 0,
+        year_week:          getWeekNumber(new Date(breakdownStart)),
+        planned_date:       breakdownStart,
+        breakdown_start:    new Date(breakdownStart).toISOString(),
+        notes:              cause,
+        planned_by:         createdBy,
+        created_date:       now,
+        status:             'Pending',
+        is_synced:          false
     };
 
     const { error } = await supabaseClient
@@ -2024,7 +2084,7 @@ function renderPlanGantt(data) {
 
     Object.values(groups).forEach(group => {
 
-        const freqLabel = group.freq + 'M';
+        const freqLabel = group.freq ? group.freq + 'M' : '—';
         const count     = group.plans.length;
 
         // Map year_week -> plan object for fast cell lookup
@@ -2185,16 +2245,18 @@ function getCellClass(plan, week, currentWeek) {
 // ============================================================
 
 function encodeTooltip(plan) {
+    const isBreakdown = plan.service_type === 'Breakdown';
+
     const lines = [
-        'ID: '           + plan.planid,
-        'Machine: '      + plan.machine_no,
-        'Type: '         + plan.service_type,
-        'Scheduled: '    + (plan.planned_date  || '—'),
-        'Week: '         + (plan.year_week     || '—'),
-        'Status: '       + (plan.status        || '—'),
-        'Planned by: '   + (plan.planned_by    || '—'),
-        'Notes: '        + (plan.notes         || '—'),
-        'Completed by: ' + (plan.completed_by  || '—'),
+        'ID: '                                      + plan.planid,
+        'Machine: '                                 + plan.machine_no,
+        'Type: '                                    + plan.service_type,
+        (isBreakdown ? 'Date: ' : 'Scheduled: ')   + (plan.planned_date || '—'),
+        'Week: '                                    + (plan.year_week    || '—'),
+        'Status: '                                  + (plan.status       || '—'),
+        (isBreakdown ? 'Reported by: ' : 'Planned by: ') + (plan.planned_by || '—'),
+        'Notes: '                                   + (plan.notes        || '—'),
+        'Completed by: '                            + (plan.completed_by || '—'),
         'Completed: '    + formatSLTime(plan.completed_date),
         'Modified: '     + formatSLTime(plan.last_modified),
         'Created: '      + formatSLTime(plan.created_date),
@@ -2785,4 +2847,390 @@ function downloadReport4CSV() {
     });
 
     downloadCSV(csv, 'breakdown_summary.csv');
+}
+
+
+// ============================================================
+// ADMIN TAB — TABLE CONFIG
+// ============================================================
+
+const ADMIN_TABLE_CONFIG = {
+    maintenance_plan:    { pk: 'planid',    label: 'Maintenance Plan' },
+    maintenance_actual:  { pk: 'id',        label: 'Maintenance Actual' },
+    machinetypes:        { pk: 'machineid', label: 'Machine Types' },
+    machine_categories:  { pk: 'id',        label: 'Machine Categories' },
+    checklist_templates: { pk: 'id',        label: 'Checklist Templates' }
+};
+
+
+// ============================================================
+// ADMIN TAB — EXPORT ALL DATA
+// Downloads all 5 tables as a single JSON backup file
+// ============================================================
+
+async function exportAllData() {
+    showAdminBackupMessage('Exporting…', 'info');
+
+    const backup = { exported_at: new Date().toISOString(), tables: {} };
+
+    for (const tableName of Object.keys(ADMIN_TABLE_CONFIG)) {
+        const { data, error } = await supabaseClient.from(tableName).select('*');
+        if (error) {
+            showAdminBackupMessage('Export failed on ' + tableName + ': ' + error.message, 'error');
+            return;
+        }
+        backup.tables[tableName] = data || [];
+    }
+
+    const json = JSON.stringify(backup, null, 2);
+    const date = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = 'dwpms_backup_' + date + '.json';
+    link.click();
+    URL.revokeObjectURL(url);
+
+    showAdminBackupMessage('Exported all tables successfully.', 'success');
+}
+
+
+// ============================================================
+// ADMIN TAB — IMPORT DATA
+// Reads a JSON backup file and upserts all records
+// ============================================================
+
+async function importData(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    showAdminBackupMessage('Importing…', 'info');
+
+    try {
+        const text   = await file.text();
+        const backup = JSON.parse(text);
+
+        if (!backup.tables) {
+            showAdminBackupMessage('Invalid backup file — missing "tables" key.', 'error');
+            return;
+        }
+
+        let totalRows = 0;
+
+        for (const [tableName, rows] of Object.entries(backup.tables)) {
+            const cfg = ADMIN_TABLE_CONFIG[tableName];
+            if (!cfg || !rows.length) continue;
+
+            const { error } = await supabaseClient
+                .from(tableName)
+                .upsert(rows, { onConflict: cfg.pk });
+
+            if (error) {
+                showAdminBackupMessage('Import failed on ' + tableName + ': ' + error.message, 'error');
+                return;
+            }
+            totalRows += rows.length;
+        }
+
+        showAdminBackupMessage('Imported ' + totalRows + ' records successfully.', 'success');
+        input.value = '';
+
+    } catch (e) {
+        showAdminBackupMessage('Import error: ' + e.message, 'error');
+    }
+}
+
+
+// ============================================================
+// ADMIN TAB — BACKUP MESSAGE
+// ============================================================
+
+function showAdminBackupMessage(msg, type) {
+    const el = document.getElementById('adminBackupMessage');
+    el.textContent = msg;
+    el.className   = 'plan__message ' + type;
+    el.classList.remove('hidden');
+    if (type === 'success') setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+
+// ============================================================
+// ADMIN TAB — LOAD TABLE
+// Fetches up to 500 rows and renders the data grid
+// ============================================================
+
+async function loadAdminTable(tableName, btn) {
+    document.querySelectorAll('.admin__table-tab')
+        .forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    window._adminCurrentTable = tableName;
+
+    const container = document.getElementById('adminTableContainer');
+    container.innerHTML = '<div style="padding:16px; color:#6b7280; font-size:13px;">Loading…</div>';
+
+    const { data, error } = await supabaseClient
+        .from(tableName)
+        .select('*')
+        .limit(500);
+
+    if (error) {
+        container.innerHTML = '<div style="padding:16px; color:#dc2626;">Error: ' + error.message + '</div>';
+        return;
+    }
+
+    renderAdminTable(tableName, data);
+}
+
+
+// ============================================================
+// ADMIN TAB — RENDER TABLE
+// ============================================================
+
+function renderAdminTable(tableName, data) {
+    const container = document.getElementById('adminTableContainer');
+    const cfg       = ADMIN_TABLE_CONFIG[tableName];
+
+    if (!data.length) {
+        container.innerHTML = `
+            <div style="margin-bottom:10px;">
+                <button class="plan__btn-primary" style="padding:6px 14px; font-size:13px;"
+                        onclick="openAdminAdd('${tableName}')">+ Add New</button>
+            </div>
+            <div style="padding:16px; color:#6b7280; font-size:13px;">No records found.</div>`;
+        return;
+    }
+
+    const cols = Object.keys(data[0]);
+
+    let html = `
+        <div style="margin-bottom:10px; display:flex; gap:8px; align-items:center;">
+            <span style="font-size:13px; color:#6b7280;">${data.length} records</span>
+            <button class="plan__btn-primary" style="padding:6px 14px; font-size:13px;"
+                    onclick="openAdminAdd('${tableName}')">+ Add New</button>
+        </div>
+        <div class="admin__table-wrap">
+        <table class="admin__table">
+            <thead><tr>`;
+
+    cols.forEach(c => { html += `<th>${c}</th>`; });
+    html += `<th>Actions</th></tr></thead><tbody>`;
+
+    data.forEach(row => {
+        const rowJson = encodeURIComponent(JSON.stringify(row));
+        html += '<tr>';
+        cols.forEach(c => {
+            const val     = row[c];
+            const raw     = val === null || val === undefined ? '' : String(val);
+            const display = typeof val === 'boolean' ? (val ? '✓' : '✗')
+                          : raw.length > 40 ? raw.slice(0, 40) + '…'
+                          : raw || '—';
+            html += `<td title="${raw.replace(/"/g, '&quot;')}">${display}</td>`;
+        });
+        html += `<td style="white-space:nowrap;">
+            <button class="admin__btn-edit"
+                    onclick="openAdminEdit('${tableName}', '${rowJson}')">Edit</button>
+            <button class="admin__btn-delete"
+                    onclick="deleteAdminRow('${tableName}', '${rowJson}')">Delete</button>
+        </td></tr>`;
+    });
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+
+// ============================================================
+// ADMIN TAB — OPEN ADD (blank record)
+// ============================================================
+
+async function openAdminAdd(tableName) {
+    const cfg = ADMIN_TABLE_CONFIG[tableName];
+
+    // Get column names from one existing row (or empty if table is empty)
+    const { data } = await supabaseClient.from(tableName).select('*').limit(1);
+    const emptyRow = {};
+    if (data && data.length) {
+        Object.keys(data[0]).forEach(k => { emptyRow[k] = ''; });
+    }
+
+    // Pre-fill planid for maintenance_plan
+    if (tableName === 'maintenance_plan') {
+        emptyRow.planid = await getNextPlanId();
+    }
+
+    window._adminEditRow   = emptyRow;
+    window._adminEditTable = tableName;
+    window._adminIsAdd     = true;
+
+    document.getElementById('adminEditTitle').textContent = 'Add New — ' + cfg.label;
+    renderAdminEditFields(emptyRow, cfg.pk, true);
+    document.getElementById('adminEditMessage').classList.add('hidden');
+    document.getElementById('adminEditModal').classList.remove('hidden');
+}
+
+
+// ============================================================
+// ADMIN TAB — OPEN EDIT
+// ============================================================
+
+function openAdminEdit(tableName, rowJson) {
+    const cfg = ADMIN_TABLE_CONFIG[tableName];
+    const row = JSON.parse(decodeURIComponent(rowJson));
+
+    window._adminEditRow   = row;
+    window._adminEditTable = tableName;
+    window._adminIsAdd     = false;
+
+    document.getElementById('adminEditTitle').textContent = 'Edit — ' + cfg.label;
+    renderAdminEditFields(row, cfg.pk, false);
+    document.getElementById('adminEditMessage').classList.add('hidden');
+    document.getElementById('adminEditModal').classList.remove('hidden');
+}
+
+
+// ============================================================
+// ADMIN TAB — RENDER EDIT FIELDS
+// Generates appropriate input types based on field name / value
+// ============================================================
+
+function renderAdminEditFields(row, pkCol, isAdd) {
+    const container = document.getElementById('adminEditFields');
+    let html = '';
+
+    Object.entries(row).forEach(([key, val]) => {
+        const isPk   = key === pkCol;
+        const strVal = val === null || val === undefined ? '' : String(val);
+
+        if (isPk && !isAdd) {
+            // PK on edit — read-only
+            html += `<div class="plan__field" style="margin-bottom:8px;">
+                <label class="plan__label">${key} (ID — read only)</label>
+                <input type="text" class="plan__input" value="${strVal}"
+                       readonly style="background:#f3f4f6; cursor:default;">
+            </div>`;
+            return;
+        }
+
+        if (typeof val === 'boolean' || strVal === 'true' || strVal === 'false') {
+            const checked = (val === true || strVal === 'true') ? 'checked' : '';
+            html += `<div class="plan__field" style="margin-bottom:8px; display:flex; align-items:center; gap:10px;">
+                <label class="plan__label" style="margin-bottom:0;">${key}</label>
+                <input type="checkbox" id="adminField_${key}" ${checked}
+                       style="width:20px; height:20px; cursor:pointer;">
+            </div>`;
+
+        } else if (/notes|comments|cause|remark|description|item_text/i.test(key)) {
+            html += `<div class="plan__field" style="margin-bottom:8px;">
+                <label class="plan__label">${key}</label>
+                <textarea id="adminField_${key}" class="plan__input"
+                          rows="2">${strVal}</textarea>
+            </div>`;
+
+        } else {
+            const escaped = strVal.replace(/"/g, '&quot;');
+            html += `<div class="plan__field" style="margin-bottom:8px;">
+                <label class="plan__label">${key}</label>
+                <input type="text" id="adminField_${key}" class="plan__input" value="${escaped}">
+            </div>`;
+        }
+    });
+
+    container.innerHTML = html;
+}
+
+
+// ============================================================
+// ADMIN TAB — CLOSE EDIT MODAL
+// ============================================================
+
+function closeAdminEdit() {
+    document.getElementById('adminEditModal').classList.add('hidden');
+    window._adminEditRow   = null;
+    window._adminEditTable = null;
+}
+
+
+// ============================================================
+// ADMIN TAB — SAVE EDIT / ADD
+// ============================================================
+
+async function saveAdminEdit() {
+    const tableName = window._adminEditTable;
+    const row       = window._adminEditRow;
+    const isAdd     = window._adminIsAdd;
+    const cfg       = ADMIN_TABLE_CONFIG[tableName];
+
+    if (!tableName || !row) return;
+
+    // Collect field values from form
+    const updated = {};
+    Object.keys(row).forEach(key => {
+        const el = document.getElementById('adminField_' + key);
+        if (!el) {
+            updated[key] = row[key]; // PK (read-only on edit)
+            return;
+        }
+        if (el.type === 'checkbox') {
+            updated[key] = el.checked;
+        } else {
+            const v = el.value.trim();
+            updated[key] = v === '' ? null : v;
+        }
+    });
+
+    let dbError;
+
+    if (isAdd) {
+        // Remove PK if empty so DB auto-assigns it (for serial IDs)
+        if (!updated[cfg.pk]) delete updated[cfg.pk];
+        ({ error: dbError } = await supabaseClient.from(tableName).insert([updated]));
+    } else {
+        ({ error: dbError } = await supabaseClient
+            .from(tableName)
+            .update(updated)
+            .eq(cfg.pk, row[cfg.pk]));
+    }
+
+    if (dbError) {
+        const el = document.getElementById('adminEditMessage');
+        el.textContent = 'Error: ' + dbError.message;
+        el.className   = 'plan__message error';
+        el.classList.remove('hidden');
+        return;
+    }
+
+    closeAdminEdit();
+    loadAdminTable(tableName, null);
+
+    // Refresh machine cache if machine-related tables changed
+    if (tableName === 'machinetypes' || tableName === 'machine_categories') {
+        loadMachineTypes();
+    }
+}
+
+
+// ============================================================
+// ADMIN TAB — DELETE ROW
+// ============================================================
+
+async function deleteAdminRow(tableName, rowJson) {
+    const row   = JSON.parse(decodeURIComponent(rowJson));
+    const cfg   = ADMIN_TABLE_CONFIG[tableName];
+    const pkVal = row[cfg.pk];
+
+    if (!confirm('Delete record "' + pkVal + '" from ' + cfg.label + '?\nThis cannot be undone.')) return;
+
+    const { error } = await supabaseClient
+        .from(tableName)
+        .delete()
+        .eq(cfg.pk, pkVal);
+
+    if (error) {
+        alert('Delete failed: ' + error.message);
+        return;
+    }
+
+    loadAdminTable(tableName, null);
 }

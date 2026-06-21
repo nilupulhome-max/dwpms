@@ -1,24 +1,24 @@
 /* ============================================================
-   DWPMS MAINTENANCE APP — STYLESHEET
+   DWPMS MAINTENANCE APP â€” STYLESHEET
    
    Sections (in order):
    1.  Base & Utilities
    2.  Login Screen
    3.  Dashboard Header
    4.  Tab Bar
-   5.  Actual Tab — Container & Stats
-   6.  Actual Tab — Filter Buttons
-   7.  Actual Tab — Task Cards
+   5.  Actual Tab â€” Container & Stats
+   6.  Actual Tab â€” Filter Buttons
+   7.  Actual Tab â€” Task Cards
    8.  Checklist Screen
-   9.  Plan Tab — Form
-   10. Plan Tab — Confirmation Box
+   9.  Plan Tab â€” Form
+   10. Plan Tab â€” Confirmation Box
    11. Gantt Grid
        11a. Wrapper & Scroll
        11b. Table Base
        11c. Frozen Columns (Desktop)
        11d. Cell Badges
        11e. Tooltip
-   12. Dashboard Tab — Stat Cards
+   12. Dashboard Tab â€” Stat Cards
    13. Mobile Overrides (@media max-width: 768px)
        13a. Header
        13b. Plan Form
@@ -32,7 +32,7 @@
    1. BASE & UTILITIES
 ============================================================ */
 
-/* Applied to body — sets background and font stack */
+/* Applied to body â€” sets background and font stack */
 body {
     margin: 0;
     background: #f4f7fb;
@@ -46,7 +46,7 @@ body {
     display: none !important;
 }
 
-/* Dashboard screen wrapper — block by default, hidden on load via .hidden */
+/* Dashboard screen wrapper â€” block by default, hidden on load via .hidden */
 .dashboard {
     display: block;
 }
@@ -129,7 +129,7 @@ body {
     flex-wrap: wrap;
 }
 
-/* Title row — centered */
+/* Title row â€” centered */
 .header-top {
     text-align: center;
     margin-bottom: 10px;
@@ -245,7 +245,7 @@ body {
 
 
 /* ============================================================
-   5. ACTUAL TAB — CONTAINER & STAT CARDS
+   5. ACTUAL TAB â€” CONTAINER & STAT CARDS
    - Yellow stat cards showing counts
    - Auto-fit grid so cards wrap on small screens
 ============================================================ */
@@ -255,14 +255,14 @@ body {
     padding: 5px;
 }
 
-/* Stat card grid — auto-wraps, minimum 180px per card */
+/* Stat card grid â€” auto-wraps, minimum 180px per card */
 .dashboard__stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 10px;
 }
 
-/* Individual stat card — yellow background */
+/* Individual stat card â€” yellow background */
 .dashboard__stat-card {
     background: rgb(253, 247, 74);
     padding: 10px 12px;
@@ -283,14 +283,44 @@ body {
     font-weight: bold;
 }
 
-/* Breakdown stat card — red, to stand out */
+/* Breakdown stat card â€” red, to stand out */
 .dashboard__stat-card--danger {
     background: #fca5a5;
 }
 
+/* Pending breakdown card â€” orange */
+.dashboard__stat-card--warning {
+    background: #fed7aa;
+}
+
+/* Year filter row above stat cards */
+.dashboard__year-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.dashboard__year-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e3a8a;
+}
+
+.dashboard__year-select {
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 
 /* ============================================================
-   6. ACTUAL TAB — FILTER BUTTONS
+   6. ACTUAL TAB â€” FILTER BUTTONS
    - This Week Pending / All Pending / All Tasks
    - Active state uses darker blue
 ============================================================ */
@@ -326,7 +356,7 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* Active filter — darker shade to indicate current selection */
+/* Active filter â€” darker shade to indicate current selection */
 .dashboard__filter-button.active {
     background: #1565c0;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -338,7 +368,7 @@ body {
 
 
 /* ============================================================
-   7. ACTUAL TAB — TASK CARDS
+   7. ACTUAL TAB â€” TASK CARDS
    - One card per maintenance plan row
    - Left: Plan ID + machine info
    - Center: service type + week
@@ -454,7 +484,7 @@ body {
     font-weight: 700;
 }
 
-/* Back button — white on blue */
+/* Back button â€” white on blue */
 .back-button {
     background: white;
     color: #1565c0;
@@ -526,7 +556,7 @@ body {
 .btn-no.active  { background: #dc3545; color: white; border-color: #dc3545; }
 .btn-na.active  { background: #6c757d; color: white; border-color: #6c757d; }
 
-/* Keep active color on hover — prevents hover from overriding active */
+/* Keep active color on hover â€” prevents hover from overriding active */
 .btn-yes.active:hover { background-color: #28a745 !important; }
 .btn-no.active:hover  { background-color: #dc3545 !important; }
 .btn-na.active:hover  { background-color: #6c757d !important; }
@@ -546,7 +576,7 @@ body {
     border-radius: 6px;
 }
 
-/* Sticky save bar — stays at bottom while scrolling checklist */
+/* Sticky save bar â€” stays at bottom while scrolling checklist */
 .checklist-bottom-bar {
     position: sticky;
     bottom: 0;
@@ -577,7 +607,7 @@ body {
 
 
 /* ============================================================
-   9. PLAN TAB — FORM
+   9. PLAN TAB â€” FORM
    - Card containing the create maintenance plan form
    - 2-column grid rows, stacks to 1 column on mobile
    - Preview table shown below form after clicking Preview
@@ -604,7 +634,7 @@ body {
     color: #111;
 }
 
-/* 2-column form row — stacks to 1 column on mobile via media query */
+/* 2-column form row â€” stacks to 1 column on mobile via media query */
 .plan__row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -644,7 +674,7 @@ body {
     border-color: #1a73e8;
 }
 
-/* Action buttons row — right aligned */
+/* Action buttons row â€” right aligned */
 .plan__actions {
     display: flex;
     justify-content: flex-end;
@@ -652,7 +682,7 @@ body {
     margin-top: 20px;
 }
 
-/* Blue primary button — used for Save */
+/* Blue primary button â€” used for Save */
 .plan__btn-primary {
     padding: 8px 20px;
     background: #1a73e8;
@@ -664,7 +694,7 @@ body {
     cursor: pointer;
 }
 
-/* Ghost button — used for Preview / Cancel */
+/* Ghost button â€” used for Preview / Cancel */
 .plan__btn-ghost {
     padding: 8px 20px;
     background: #cdddf5;
@@ -675,7 +705,7 @@ body {
     cursor: pointer;
 }
 
-/* Danger button — used for Report Breakdown */
+/* Danger button â€” used for Report Breakdown */
 .plan__btn-danger {
     padding: 8px 20px;
     background: #dc2626;
@@ -687,7 +717,7 @@ body {
     cursor: pointer;
 }
 
-/* Preview table — scrollable on mobile */
+/* Preview table â€” scrollable on mobile */
 .plan__preview {
     margin-top: 16px;
     border: 1px solid #e5e7eb;
@@ -741,14 +771,14 @@ body {
 
 
 /* ============================================================
-   10. PLAN TAB — CONFIRMATION BOX
+   10. PLAN TAB â€” CONFIRMATION BOX
    - Shown below preview table after clicking Preview
    - Red/warning version: conflicts found
    - Green/clean version: no conflicts
    - Conflict table is scrollable on mobile
 ============================================================ */
 
-/* Warning box — red — shown when conflicts exist */
+/* Warning box â€” red â€” shown when conflicts exist */
 .plan-confirm__warning {
     margin-top: 16px;
     border: 1px solid #fca5a5;
@@ -757,7 +787,7 @@ body {
     background: #fff5f5;
 }
 
-/* Clean box — green — shown when no conflicts exist */
+/* Clean box â€” green â€” shown when no conflicts exist */
 .plan-confirm__clean {
     margin-top: 16px;
     border: 1px solid #86efac;
@@ -780,7 +810,7 @@ body {
     margin-bottom: 8px;
 }
 
-/* Conflict table — display block + overflow-x to scroll on mobile */
+/* Conflict table â€” display block + overflow-x to scroll on mobile */
 .plan-confirm__table {
     display: block;
     width: 100%;
@@ -832,7 +862,7 @@ body {
 
 /* ---- 11a. Wrapper & Scroll ---- */
 
-/* Outer wrapper — rounded border, hides overflow for border-radius */
+/* Outer wrapper â€” rounded border, hides overflow for border-radius */
 .plan-grid__wrap {
     margin-top: 16px;
     margin-bottom: 10px;        /* space for tooltip above bottom of screen */
@@ -842,7 +872,7 @@ body {
     background: #fff;
 }
 
-/* Scroll container — enables horizontal scrolling
+/* Scroll container â€” enables horizontal scrolling
    overflow: hidden on parent clips the border-radius correctly */
 .plan-grid__scroll {
     overflow-x: auto;
@@ -861,7 +891,7 @@ body {
     table-layout: fixed;
 }
 
-/* All header cells — dark blue background, sticky to top */
+/* All header cells â€” dark blue background, sticky to top */
 .plan-grid__table th {
     background: #1a3a5c;
     color: #fff;
@@ -874,7 +904,7 @@ body {
     z-index: 2;                 /* week header cells sit above body */
 }
 
-/* All body cells — light background, centered */
+/* All body cells â€” light background, centered */
 .plan-grid__table td {
     padding: 6px 8px;
     border: 1px solid #e5e7eb;
@@ -883,7 +913,7 @@ body {
     background: #fff;
 }
 
-/* Row hover — highlight whole row */
+/* Row hover â€” highlight whole row */
 .plan-grid__table tr:hover td            { background: #f0f4ff; }
 .plan-grid__table tr:hover td.col-sticky { background: #e8eeff; }
 
@@ -895,10 +925,10 @@ body {
    - JS renderPlanGantt() inline styles on th and td
    
    Desktop frozen column widths:
-   Col 1 (Category): 130px  — left: 0
-   Col 2 (Machine):   80px  — left: 130px
-   Col 3 (Freq):      50px  — left: 210px
-   Col 4 (N):         35px  — left: 260px
+   Col 1 (Category): 130px  â€” left: 0
+   Col 2 (Machine):   80px  â€” left: 130px
+   Col 3 (Freq):      50px  â€” left: 210px
+   Col 4 (N):         35px  â€” left: 260px
    Total frozen area: 295px
 ------------------------------------------------ */
 
@@ -906,7 +936,7 @@ body {
 .plan-grid__table thead th.col-sticky {
     position: sticky;
     top: 0;
-    z-index: 4;                 /* above everything — highest z-index */
+    z-index: 4;                 /* above everything â€” highest z-index */
     background: #1a3a5c;        /* solid background prevents bleed-through */
     text-align: left;
 }
@@ -915,12 +945,12 @@ body {
 .plan-grid__table tbody td.col-sticky {
     position: sticky;
     z-index: 1;
-    background: #f9fafb;        /* light grey — distinct from data cells */
+    background: #f9fafb;        /* light grey â€” distinct from data cells */
     font-weight: 500;
     text-align: left;
 }
 
-/* Col 1: Category — widest frozen column */
+/* Col 1: Category â€” widest frozen column */
 .plan-grid__table thead th.col-sticky:nth-child(1),
 .plan-grid__table tbody td.col-sticky:nth-child(1) {
     left: 0;
@@ -974,32 +1004,32 @@ body {
     text-align: center;
 }
 
-/* Scheduled — green */
+/* Scheduled â€” green */
 .plan-grid__cell.scheduled { background: #86efac; color: #14532d; }
 
-/* Planned — light red */
+/* Planned â€” light red */
 .plan-grid__cell.planned   { background: #fca5a5; color: #7f1d1d; }
 
-/* Scheduled + Completed — green with tick */
+/* Scheduled + Completed â€” green with tick */
 .plan-grid__cell.s-c       { background: #86efac; color: #14532d; }
 
-/* Planned + Completed — light red */
+/* Planned + Completed â€” light red */
 .plan-grid__cell.p-c       { background: #fca5a5; color: #7f1d1d; }
 
-/* Breakdown — orange */
+/* Breakdown â€” orange */
 .plan-grid__cell.breakdown { background: #fb923c; color: #7c2d12; }
 
-/* Breakdown + Completed — orange */
+/* Breakdown + Completed â€” orange */
 .plan-grid__cell.b-c       { background: #fdba74; color: #7c2d12; }
 
-/* Awaiting admin review (Submitted, not yet signed off) — purple */
+/* Awaiting admin review (Submitted, not yet signed off) â€” purple */
 .plan-grid__cell.awaiting-review { background: #c4b5fd; color: #3730a3; }
 .plan-grid__cell.b-r             { background: #c4b5fd; color: #3730a3; }
 
-/* Delayed — past due, not completed — bright red */
+/* Delayed â€” past due, not completed â€” bright red */
 .plan-grid__cell.delayed   { background: #f87171; color: #7f1d1d; }
 
-/* Future — upcoming week — blue */
+/* Future â€” upcoming week â€” blue */
 .plan-grid__cell.future    { background: #93c5fd; color: #1e3a5f; }
 
 
@@ -1028,7 +1058,7 @@ body {
 
 
 /* ============================================================
-   12. DASHBOARD TAB — STAT CARDS
+   12. DASHBOARD TAB â€” STAT CARDS
    - 5 cards in a row on desktop
    - Shows: Total Planned, Scheduled, Pending, Completed, Overdue
    - Color-coded numbers: orange=pending, green=completed, red=overdue
@@ -1039,7 +1069,7 @@ body {
     padding: 24px;
 }
 
-/* 5-column grid on desktop — overridden to 2 columns on mobile */
+/* 5-column grid on desktop â€” overridden to 2 columns on mobile */
 .dash__grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -1072,7 +1102,7 @@ body {
 .dash__number--overdue   { color: #dc2626; }    /* red */
 
 /* ============================================================
-   DOWNTIME BANNER — CURRENT MONTH, BY MACHINE CATEGORY
+   DOWNTIME BANNER â€” CURRENT MONTH, BY MACHINE CATEGORY
    - Styled to match .dash__card so it looks consistent
      with the other dashboard stat cards
 ============================================================ */
@@ -1139,7 +1169,7 @@ body {
     padding: 8px;
 }
 
-/* Overdue table — scrollable on mobile */
+/* Overdue table â€” scrollable on mobile */
 .reports__card {
     padding: 12px;
 }
@@ -1163,10 +1193,10 @@ body {
    13c. Dashboard Cards
    13d. Gantt Frozen Columns (Mobile)
        Mobile frozen column widths:
-       Col 1 (Category): 70px  — left: 0
-       Col 2 (Machine):  55px  — left: 70px
-       Col 3 (Freq):     35px  — left: 125px
-       Col 4 (N):        25px  — left: 160px
+       Col 1 (Category): 70px  â€” left: 0
+       Col 2 (Machine):  55px  â€” left: 70px
+       Col 3 (Freq):     35px  â€” left: 125px
+       Col 4 (N):        25px  â€” left: 160px
        Total frozen area: 185px
 ============================================================ */
 
@@ -1220,6 +1250,7 @@ body {
     /* 2 columns on mobile instead of 5 */
     .dash__grid { grid-template-columns: repeat(2, 1fr); }
 
+
     /* Last card (Overdue) spans full width on 2-col grid */
     .dash__grid .dash__card:last-child { grid-column: 1 / -1; }
 
@@ -1230,7 +1261,7 @@ body {
        CSS width + left offsets + JS inline styles
     ---- */
 
-    /* Col 1: Category — narrowed to 70px */
+    /* Col 1: Category â€” narrowed to 70px */
     .plan-grid__table thead th.col-sticky:nth-child(1),
     .plan-grid__table tbody td.col-sticky:nth-child(1) {
         left: 0;
@@ -1241,7 +1272,7 @@ body {
         padding: 4px 3px;
     }
 
-    /* Col 2: Machine — narrowed to 55px, starts at 70px */
+    /* Col 2: Machine â€” narrowed to 55px, starts at 70px */
     .plan-grid__table thead th.col-sticky:nth-child(2),
     .plan-grid__table tbody td.col-sticky:nth-child(2) {
         left: 70px;
@@ -1252,7 +1283,7 @@ body {
         padding: 4px 3px;
     }
 
-    /* Col 3: Freq — narrowed to 35px, starts at 125px */
+    /* Col 3: Freq â€” narrowed to 35px, starts at 125px */
     .plan-grid__table thead th.col-sticky:nth-child(3),
     .plan-grid__table tbody td.col-sticky:nth-child(3) {
         left: 125px;
@@ -1263,7 +1294,7 @@ body {
         padding: 4px 3px;
     }
 
-    /* Col 4: Count (N) — narrowed to 25px, starts at 160px */
+    /* Col 4: Count (N) â€” narrowed to 25px, starts at 160px */
     .plan-grid__table thead th.col-sticky:nth-child(4),
     .plan-grid__table tbody td.col-sticky:nth-child(4) {
         left: 160px;
@@ -1365,7 +1396,7 @@ body {
     color: #111;
 }
 
-/* Filter row — Machine History report (machine / dates / type) */
+/* Filter row â€” Machine History report (machine / dates / type) */
 .reports__filters {
     display: flex;
     flex-wrap: wrap;
@@ -1437,4 +1468,164 @@ body {
     .reports__table { font-size: 11px; }
     .reports__table th,
     .reports__table td { padding: 6px 8px; }
+}
+
+
+/* ============================================================
+   ADMIN TAB
+============================================================ */
+
+.admin__container {
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.admin__card {
+    background: white;
+    border-radius: 15px;
+    padding: 16px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.admin__card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e3a8a;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #e0e7ff;
+    padding-bottom: 8px;
+}
+
+/* Backup row */
+.admin__backup-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.admin__btn-export {
+    background: #1e3a8a;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.admin__btn-export:hover { background: #1e88e5; }
+
+.admin__btn-import {
+    display: inline-block;
+    background: #16a34a;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.admin__btn-import:hover { background: #15803d; }
+
+/* Table selector buttons */
+.admin__table-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.admin__table-tab {
+    background: #e0e7ff;
+    color: #1e3a8a;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.admin__table-tab:hover  { background: #c7d2fe; }
+.admin__table-tab.active { background: #1e3a8a; color: white; }
+
+/* Data table */
+.admin__table-wrap {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.admin__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.admin__table th {
+    background: #1e3a8a;
+    color: white;
+    padding: 8px 10px;
+    text-align: left;
+    white-space: nowrap;
+    font-size: 11px;
+    position: sticky;
+    top: 0;
+}
+
+.admin__table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+    white-space: nowrap;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin__table tr:hover td { background: #f0f4ff; }
+
+.admin__btn-edit {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    margin-right: 4px;
+}
+
+.admin__btn-delete {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+/* Edit modal overrides for admin (taller, scrollable) */
+.admin__edit-card {
+    max-height: 82vh;
+    overflow-y: auto;
+}
+
+.admin__edit-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* info message type (blue) */
+.plan__message.info {
+    background: #e0e7ff;
+    color: #1e3a8a;
+    border: 1px solid #c7d2fe;
 }
