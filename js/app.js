@@ -234,6 +234,10 @@ function switchTab(name, btn) {
         loadDashboardStats(); // load summary stat cards
           loadReports();   
     }
+
+    if (name === 'review') {
+        loadReviewTasks(); // load tasks awaiting admin sign-off
+    }
 }
 
 
@@ -248,7 +252,7 @@ async function loadDashboardStats() {
 
     const { data, error } = await supabaseClient
         .from('maintenance_plan')
-        .select('service_type, status, planned_date');
+        .select('service_type, status, planned_date, repair_cost, downtime_hours, machine_category, breakdown_start');
 
     if (error) {
         console.error('Dashboard stats error:', error.message);
@@ -258,15 +262,18 @@ async function loadDashboardStats() {
     const today = new Date().toISOString().split('T')[0];
 
     // Calculate counts
-    const total     = data.length;
-    const scheduled = data.filter(r => r.service_type === 'Scheduled').length;
-    const pending   = data.filter(r => r.status === 'Pending').length;
-    const completed = data.filter(r => r.status === 'Completed').length;
-    const overdue   = data.filter(r =>
+    const total      = data.length;
+    const scheduled  = data.filter(r => r.service_type === 'Scheduled').length;
+    const pending    = data.filter(r => r.status === 'Pending').length;
+    const completed  = data.filter(r => r.status === 'Completed').length;
+    const overdue    = data.filter(r =>
         r.status === 'Pending' &&
         r.planned_date &&
         r.planned_date < today
     ).length;
+    const breakdowns   = data.filter(r => r.service_type === 'Breakdown').length;
+    const repairCost   = data.reduce((sum, r) => sum + (r.repair_cost || 0), 0);
+    const downtimeHrs  = data.reduce((sum, r) => sum + (r.downtime_hours || 0), 0);
 
     // Update stat cards
     document.getElementById('dashTotal').textContent     = total;
@@ -274,6 +281,64 @@ async function loadDashboardStats() {
     document.getElementById('dashPending').textContent   = pending;
     document.getElementById('dashCompleted').textContent = completed;
     document.getElementById('dashOverdue').textContent   = overdue;
+    document.getElementById('dashBreakdowns').textContent    = breakdowns;
+    document.getElementById('dashRepairCost').textContent    = repairCost.toFixed(2);
+    document.getElementById('dashDowntimeHours').textContent = downtimeHrs.toFixed(2);
+
+    renderDowntimeBanner(data);
+}
+
+
+// ============================================================
+// DOWNTIME BANNER — CURRENT MONTH, BY MACHINE CATEGORY
+// - Shows the month/year being summarized in the heading
+// - One small banner per machine category with total downtime hrs
+// ============================================================
+async function renderDowntimeBanner(data) {
+
+    const now = new Date();
+    const ym  = now.toISOString().slice(0, 7); // "YYYY-MM"
+
+    const monthLabel = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+    document.getElementById('downtimeMonthLabel').textContent = `— ${monthLabel}`;
+
+    const thisMonth = data.filter(r =>
+        r.service_type === 'Breakdown' &&
+        (r.breakdown_start || '').slice(0, 7) === ym
+    );
+
+    // Ensure machine category list is available, even if Plan tab hasn't loaded yet
+    if (!window._machineData) {
+        await loadMachineTypes();
+    }
+
+    const totals = {};
+
+    // Start every known machine category at 0 hrs
+    if (window._machineData) {
+        const allCategories = [...new Set(window._machineData.map(d => d.machine_category))];
+        allCategories.forEach(cat => { totals[cat] = 0; });
+    }
+
+    thisMonth.forEach(r => {
+        const cat = r.machine_category || 'Unknown';
+        totals[cat] = (totals[cat] || 0) + (r.downtime_hours || 0);
+    });
+
+    const container = document.getElementById('downtimeBannerRow');
+
+    if (!Object.keys(totals).length) {
+        container.innerHTML = '<div class="downtime-banner"><div class="downtime-banner__label">No downtime this month</div></div>';
+        return;
+    }
+
+    container.innerHTML = Object.entries(totals)
+        .map(([cat, hrs]) => `
+            <div class="downtime-banner">
+                <div class="downtime-banner__label">${cat}</div>
+                <div class="downtime-banner__number">${hrs.toFixed(2)} hrs</div>
+            </div>`)
+        .join('');
 }
 
 // ============================================================
@@ -343,15 +408,17 @@ async function loadTasks(filterType, clickedButton) {
 
 function renderDashboardStats(taskData) {
 
-    const planned   = taskData.filter(t => t.service_type === 'Planned').length;
-    const scheduled = taskData.filter(t => t.service_type === 'Scheduled').length;
-    const pending   = taskData.filter(t => t.status === 'Pending').length;
-    const completed = taskData.filter(t => t.status === 'Completed').length;
+    const planned    = taskData.filter(t => t.service_type === 'Planned').length;
+    const scheduled  = taskData.filter(t => t.service_type === 'Scheduled').length;
+    const pending    = taskData.filter(t => t.status === 'Pending').length;
+    const completed  = taskData.filter(t => t.status === 'Completed').length;
+    const breakdowns = taskData.filter(t => t.service_type === 'Breakdown').length;
 
     document.getElementById('dashboardPlannedCount').innerText   = planned;
     document.getElementById('dashboardScheduledCount').innerText = scheduled;
     document.getElementById('dashboardPendingCount').innerText   = pending;
     document.getElementById('dashboardCompletedCount').innerText = completed;
+    document.getElementById('dashboardBreakdownCount').innerText = breakdowns;
 }
 
 
@@ -381,7 +448,9 @@ function renderTaskCards(taskData) {
         // Status badge class
         const badgeCls = status === 'Completed'
             ? 'task-row__badge--completed'
-            : 'task-row__badge--pending';
+            : status === 'Submitted'
+                ? 'task-row__badge--submitted'
+                : 'task-row__badge--pending';
 
                     // Card color based on week status
             let borderColor = '#1e3a8a';        // default blue
@@ -398,7 +467,7 @@ function renderTaskCards(taskData) {
         container.innerHTML += `
             <div class="task-row"
                      style="border-left-color:${borderColor}; background:${bgColor};"
-                    onclick="openChecklist('${planId}', '${category}', '${machine}')">
+                    onclick="${status === 'Pending' ? `openChecklist('${planId}', '${category}', '${machine}')` : ''}">
 
                 <!-- LEFT: Plan ID + Machine -->
                 <div class="task-row__left">
@@ -535,6 +604,40 @@ console.log('Checklist items loaded:', items.length);
     const container = document.getElementById('checklistContainer');
     container.innerHTML = '';
 
+    if (data.service_type === 'Breakdown') {
+
+        // Breakdown task — capture repair start/end + cost
+        window._currentChecklistItems = [];
+
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const nowLocal = now.toISOString().slice(0, 16);
+
+        container.innerHTML = `
+            <div class="check-row">
+                <div class="check-text" style="color:#dc2626; font-size:14px;">⚠ Breakdown Report</div>
+                <div style="background:#fff5f5; border:1px solid #fca5a5; border-radius:8px;
+                            padding:12px 14px; font-size:14px; color:#7f1d1d; margin-top:8px; line-height:1.6;">
+                    Breakdown start: ${formatSLTime(data.breakdown_start)}<br>
+                    Cause: ${data.notes || '—'}
+                </div>
+            </div>
+            <div class="check-row" style="margin-top:12px;">
+                <div class="check-text">Repair Start</div>
+                <input type="datetime-local" id="bdRepairStart" class="plan__input" value="${nowLocal}">
+            </div>
+            <div class="check-row" style="margin-top:12px;">
+                <div class="check-text">Repair End</div>
+                <input type="datetime-local" id="bdRepairEnd" class="plan__input" value="${nowLocal}">
+            </div>
+            <div class="check-row" style="margin-top:12px;">
+                <div class="check-text">Comments</div>
+                <textarea id="plannedComment" class="plan__input" rows="3" placeholder="Repair notes..."></textarea>
+            </div>`;
+
+        return;
+    }
+
     if (data.service_type === 'Scheduled') {
 
         // Load checklist items for this machine category from Supabase
@@ -601,7 +704,7 @@ function setResult(index, value, clickedButton) {
 
     // Store result
     checklistResults[index] = {
-        attribute_name: checklistItems[index],
+        attribute_name: window._currentChecklistItems[index],
         result_value: value
     };
 
@@ -688,7 +791,7 @@ function backToTasks() {
 
 async function saveChecklist() {
 
-    console.log('Saving checklist for plan:', currentPlanId);
+    console.log('Submitting checklist for plan:', currentPlanId);
 
     try {
 
@@ -697,9 +800,83 @@ async function saveChecklist() {
         // Fetch plan to check service_type
         const { data: plan } = await supabaseClient
             .from('maintenance_plan')
-            .select('service_type, notes')
+            .select('service_type, notes, breakdown_start')
             .eq('planid', currentPlanId)
             .single();
+
+        if (plan.service_type === 'Breakdown') {
+
+            const repairStartVal = document.getElementById('bdRepairStart')?.value;
+            const repairEndVal   = document.getElementById('bdRepairEnd')?.value;
+            const comment        = document.getElementById('plannedComment')?.value || '';
+
+            if (!repairStartVal || !repairEndVal) {
+                alert('Please enter repair start and end times.');
+                return;
+            }
+
+            const repairStart = new Date(repairStartVal);
+            const repairEnd   = new Date(repairEndVal);
+
+            if (repairEnd < repairStart) {
+                alert('Repair end time cannot be before repair start time.');
+                return;
+            }
+
+            // Downtime = from breakdown start to repair end
+            const breakdownStart = plan.breakdown_start ? new Date(plan.breakdown_start) : repairStart;
+            const downtimeHours  = Math.round(((repairEnd - breakdownStart) / 3600000) * 100) / 100;
+            const repairHours    = Math.round(((repairEnd - repairStart) / 3600000) * 100) / 100;
+
+            rowsToInsert = [{
+                plan_id:          currentPlanId,
+                machine_category: currentMachineCategory,
+                machine_no:       currentMachineNo,
+                technician:       currentUser,
+                attribute_name:   'Breakdown Repair',
+                result_value:     'Submitted',
+                comments:         comment,
+                status:           'Submitted',
+                is_synced:        false
+            }];
+
+            const { error: insertError } = await supabaseClient
+                .from('maintenance_actual')
+                .insert(rowsToInsert);
+
+            if (insertError) {
+                console.error('Insert error:', insertError);
+                alert(insertError.message);
+                return;
+            }
+
+            // NOTE: repair_cost is intentionally NOT set here — cost is
+            // entered later by the maintenance admin in the Review tab.
+            const { error: updateError } = await supabaseClient
+                .from('maintenance_plan')
+                .update({
+                    status:         'Submitted',
+                    completed_by:   currentUser,
+                    comments:       comment,
+                    repair_start:   repairStart.toISOString(),
+                    repair_end:     repairEnd.toISOString(),
+                    downtime_hours: downtimeHours,
+                    repair_hours:   repairHours,
+                    completed_date: new Date().toISOString()
+                })
+                .eq('planid', currentPlanId);
+
+            if (updateError) {
+                console.error('Plan update error:', updateError);
+                alert(updateError.message);
+                return;
+            }
+
+            alert('Breakdown repair submitted for admin review!');
+            backToTasks();
+            refreshAll();
+            return;
+        }
 
         if (plan.service_type === 'Scheduled') {
 
@@ -712,7 +889,7 @@ async function saveChecklist() {
                 attribute_name:   item,
                 result_value:     checklistResults[i]?.result_value || 'N/A',
                 comments:         document.getElementById(`comment_${i}`)?.value || '',
-                status:           'Completed',
+                status:           'Submitted',
                 is_synced:        false
             }));
 
@@ -727,9 +904,9 @@ async function saveChecklist() {
                 machine_no:       currentMachineNo,
                 technician:       currentUser,
                 attribute_name:   plan.notes || 'Plan Note',
-                result_value:     'Completed',
+                result_value:     'Submitted',
                 comments:         comment,
-                status:           'Completed',
+                status:           'Submitted',
                 is_synced:        false
             }];
         }
@@ -746,19 +923,27 @@ async function saveChecklist() {
         }
 
         // Update plan status, completed_by, comments, completed_date
-    const { error: updateError } = await supabaseClient
-    .from('maintenance_plan')
-    .update({
-        status:         'Completed',
-        completed_by:   currentUser,
-        comments:       plan.service_type === 'Scheduled'
-                            ? '' 
-                            : document.getElementById('plannedComment')?.value || '',
-        completed_date: new Date().toISOString()
-    })
-    .eq('planid', currentPlanId);
+        // Status goes to 'Submitted' here — admin sign-off (Review tab)
+        // moves it to 'Completed'.
+        const { error: updateError } = await supabaseClient
+            .from('maintenance_plan')
+            .update({
+                status:         'Submitted',
+                completed_by:   currentUser,
+                comments:       plan.service_type === 'Scheduled'
+                                    ? ''
+                                    : document.getElementById('plannedComment')?.value || '',
+                completed_date: new Date().toISOString()
+            })
+            .eq('planid', currentPlanId);
 
-        alert('Saved successfully!');
+        if (updateError) {
+            console.error('Plan update error:', updateError);
+            alert(updateError.message);
+            return;
+        }
+
+        alert('Submitted for admin review!');
         backToTasks();
         refreshAll();
 
@@ -767,6 +952,254 @@ async function saveChecklist() {
         alert(err.message);
     }
 }
+
+
+// ============================================================
+// REVIEW TAB — LOAD TASKS
+// - Fetches all Submitted tasks (awaiting admin sign-off)
+// - Updates stat cards and renders review cards
+// ============================================================
+
+async function loadReviewTasks() {
+
+    const { data, error } = await supabaseClient
+        .from('maintenance_plan')
+        .select('*')
+        .eq('status', 'Submitted')
+        .order('completed_date', { ascending: false });
+
+    if (error) {
+        console.error('Load review tasks error:', error);
+        alert(error.message);
+        return;
+    }
+
+    document.getElementById('reviewPendingCount').textContent = data.length;
+
+    // Count how many were signed off today (for the stat card)
+    const today = new Date().toISOString().split('T')[0];
+    const { data: signedToday } = await supabaseClient
+        .from('maintenance_plan')
+        .select('planid')
+        .eq('status', 'Completed')
+        .gte('review_date', today + 'T00:00:00');
+
+    document.getElementById('reviewSignedTodayCount').textContent = signedToday ? signedToday.length : 0;
+
+    renderReviewCards(data);
+}
+
+
+// ============================================================
+// REVIEW TAB — RENDER CARDS
+// - One card per Submitted task
+// - Clicking a card opens the review detail screen
+// ============================================================
+
+function renderReviewCards(taskData) {
+
+    const container = document.getElementById('reviewTaskList');
+    container.innerHTML = '';
+
+    if (!taskData.length) {
+        container.innerHTML = '<div style="padding:16px; color:#6b7280; font-size:13px;">✅ Nothing awaiting review.</div>';
+        return;
+    }
+
+    taskData.forEach(task => {
+
+        const planId   = task.planid;
+        const machine   = task.machine_no || '';
+        const category  = task.machine_category || '';
+        const service   = task.service_type || '';
+
+        container.innerHTML += `
+            <div class="task-row"
+                 style="border-left-color:#6366f1; background:#eef2ff;"
+                 onclick="openReview('${planId}')">
+
+                <div class="task-row__left">
+                    <div class="task-row__title">${planId}</div>
+                    <div class="task-row__machine">Machine: ${machine}</div>
+                    <div class="task-row__category">Category: ${category}</div>
+                </div>
+
+                <div class="task-row__center">
+                    <div class="task-row__service">${service}</div>
+                    <div class="task-row__week">Submitted by: ${task.completed_by || '—'}</div>
+                    <div class="task-row__week">Submitted: ${formatSLTime(task.completed_date)}</div>
+                </div>
+
+                <div class="task-row__right">
+                    <span class="task-row__badge task-row__badge--submitted">Awaiting Review</span>
+                </div>
+
+            </div>
+        `;
+    });
+}
+
+
+// ============================================================
+// REVIEW TAB — OPEN REVIEW DETAIL
+// - Fetches plan + the technician's maintenance_actual rows
+// - Renders read-only summary, plus cost field (Breakdown only)
+//   and an admin remarks box
+// ============================================================
+
+async function openReview(planId) {
+
+    window._reviewingPlanId = planId;
+
+    const { data: plan, error: planError } = await supabaseClient
+        .from('maintenance_plan')
+        .select('*')
+        .eq('planid', planId)
+        .single();
+
+    if (planError || !plan) {
+        alert('Could not load plan: ' + (planError?.message || 'not found'));
+        return;
+    }
+
+    const { data: actualRows } = await supabaseClient
+        .from('maintenance_actual')
+        .select('*')
+        .eq('plan_id', planId);
+
+    window._reviewingPlan = plan;
+
+    document.getElementById('reviewListScreen').classList.add('hidden');
+    document.getElementById('reviewDetailScreen').classList.remove('hidden');
+
+    const container = document.getElementById('reviewContainer');
+    let html = `
+        <div class="check-row">
+            <div class="check-text" style="color:#3730a3; font-size:14px;">
+                ${plan.planid} — ${plan.machine_no} (${plan.machine_category})
+            </div>
+            <div style="background:#eef2ff; border:1px solid #c4b5fd; border-radius:8px;
+                        padding:12px 14px; font-size:13px; color:#3730a3; margin-top:8px; line-height:1.6;">
+                Type: ${plan.service_type}<br>
+                Submitted by: ${plan.completed_by || '—'}<br>
+                Submitted: ${formatSLTime(plan.completed_date)}
+            </div>
+        </div>`;
+
+    if (plan.service_type === 'Breakdown') {
+        html += `
+            <div class="check-row" style="margin-top:12px;">
+                <div class="check-text" style="color:#dc2626;">⚠ Breakdown Details</div>
+                <div style="background:#fff5f5; border:1px solid #fca5a5; border-radius:8px;
+                            padding:12px 14px; font-size:13px; color:#7f1d1d; margin-top:8px; line-height:1.6;">
+                    Cause: ${plan.notes || '—'}<br>
+                    Breakdown start: ${formatSLTime(plan.breakdown_start)}<br>
+                    Repair start: ${formatSLTime(plan.repair_start)}<br>
+                    Repair end: ${formatSLTime(plan.repair_end)}<br>
+                    Downtime: ${plan.downtime_hours ?? '—'} hrs<br>
+                    Repair time: ${plan.repair_hours ?? '—'} hrs<br>
+                    Technician comments: ${plan.comments || '—'}
+                </div>
+            </div>
+            <div class="check-row" style="margin-top:12px;">
+                <div class="check-text">Repair Cost</div>
+                <input type="number" id="reviewRepairCost" class="plan__input"
+                       placeholder="0.00" step="0.01" min="0"
+                       value="${plan.repair_cost ?? ''}">
+            </div>`;
+    } else {
+        // Scheduled / Planned — show technician's checklist / note responses
+        html += `
+            <div class="check-row" style="margin-top:12px;">
+                <div class="check-text">Technician Submission</div>
+                <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px;
+                            padding:12px 14px; font-size:13px; color:#374151; margin-top:8px;">`;
+
+        if (actualRows && actualRows.length) {
+            actualRows.forEach(row => {
+                html += `
+                    <div style="padding:6px 0; border-bottom:1px solid #e5e7eb;">
+                        <strong>${row.attribute_name}</strong> — ${row.result_value}
+                        ${row.comments ? `<br><span style="color:#6b7280;">Comment: ${row.comments}</span>` : ''}
+                    </div>`;
+            });
+        } else {
+            html += '<div style="color:#6b7280;">No checklist data found.</div>';
+        }
+
+        html += `</div></div>`;
+    }
+
+    html += `
+        <div class="check-row" style="margin-top:12px;">
+            <div class="check-text">Admin Remarks</div>
+            <textarea id="reviewRemarks" class="plan__input" rows="3" placeholder="Optional remarks...">${plan.admin_remarks || ''}</textarea>
+        </div>`;
+
+    container.innerHTML = html;
+}
+
+
+// ============================================================
+// REVIEW TAB — BACK TO LIST
+// ============================================================
+
+function backToReviewList() {
+    document.getElementById('reviewDetailScreen').classList.add('hidden');
+    document.getElementById('reviewListScreen').classList.remove('hidden');
+}
+
+
+// ============================================================
+// REVIEW TAB — SIGN OFF
+// - Admin signs off: status -> Completed
+// - For Breakdown tasks, saves the repair cost entered here
+// - Stamps reviewed_by + review_date
+// ============================================================
+
+async function signOffTask() {
+
+    const planId = window._reviewingPlanId;
+    const plan   = window._reviewingPlan;
+
+    if (!planId || !plan) return;
+
+    const remarks = document.getElementById('reviewRemarks')?.value || '';
+
+    const updatePayload = {
+        status:        'Completed',
+        reviewed_by:   currentUser,
+        review_date:   new Date().toISOString(),
+        admin_remarks: remarks
+    };
+
+    if (plan.service_type === 'Breakdown') {
+        const costVal = document.getElementById('reviewRepairCost')?.value;
+        if (costVal === '' || costVal === null || costVal === undefined) {
+            alert('Please enter a repair cost before signing off.');
+            return;
+        }
+        updatePayload.repair_cost = parseFloat(costVal) || 0;
+    }
+
+    const { error } = await supabaseClient
+        .from('maintenance_plan')
+        .update(updatePayload)
+        .eq('planid', planId);
+
+    if (error) {
+        console.error('Sign-off error:', error);
+        alert(error.message);
+        return;
+    }
+
+    alert('Signed off — task marked Completed.');
+    backToReviewList();
+    loadReviewTasks();
+    refreshAll();
+}
+
+
 
 
 // ============================================================
@@ -828,6 +1261,138 @@ function onMachineTypeChange() {
                 ${m.machineid} — ${m.machine_name}
             </option>`;
     });
+}
+
+
+// ============================================================
+// BREAKDOWN — OPEN MODAL
+// - Populates machine type dropdown (reuses cached machine data)
+// - Defaults breakdown start to now
+// ============================================================
+
+function openBreakdownModal() {
+
+    const typeSelect = document.getElementById('bdMachineType');
+    typeSelect.innerHTML = '<option value="">Select Machine Type</option>';
+
+    if (window._machineData) {
+        const categories = [...new Set(window._machineData.map(d => d.machine_category))];
+        categories.forEach(cat => {
+            typeSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+        });
+    }
+
+    document.getElementById('bdMachineId').innerHTML = '<option value="">Select Machine ID</option>';
+    document.getElementById('bdCause').value = '';
+    document.getElementById('breakdownMessage').classList.add('hidden');
+
+    // Default breakdown start to right now (local time, for datetime-local input)
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('bdBreakdownStart').value = now.toISOString().slice(0, 16);
+
+    document.getElementById('breakdownModal').classList.remove('hidden');
+}
+
+
+// ============================================================
+// BREAKDOWN — CLOSE MODAL
+// ============================================================
+
+function closeBreakdownModal() {
+    document.getElementById('breakdownModal').classList.add('hidden');
+}
+
+
+// ============================================================
+// BREAKDOWN — MACHINE TYPE CHANGE
+// - Filters Machine ID dropdown based on selected category
+// ============================================================
+
+function onBreakdownMachineTypeChange() {
+
+    const selected = document.getElementById('bdMachineType').value;
+    const idSelect = document.getElementById('bdMachineId');
+
+    idSelect.innerHTML = '<option value="">Select Machine ID</option>';
+
+    if (!selected || !window._machineData) return;
+
+    const filtered = window._machineData.filter(d => d.machine_category === selected);
+    filtered.forEach(m => {
+        idSelect.innerHTML += `
+            <option value="${m.machineid}" data-name="${m.machine_name}">
+                ${m.machineid} — ${m.machine_name}
+            </option>`;
+    });
+}
+
+
+// ============================================================
+// BREAKDOWN — SAVE REPORT
+// - Inserts a Pending maintenance_plan row with service_type 'Breakdown'
+// - This task is completed later via the breakdown completion form
+//   (opened from the task list, same as Scheduled/Planned tasks)
+// ============================================================
+
+async function saveBreakdownReport() {
+
+    const machineType     = document.getElementById('bdMachineType').value.trim();
+    const machineId       = document.getElementById('bdMachineId').value.trim();
+    const breakdownStart  = document.getElementById('bdBreakdownStart').value;
+    const cause           = document.getElementById('bdCause').value.trim();
+
+    if (!machineType || !machineId || !breakdownStart) {
+        showBreakdownMessage('Please fill in machine type, machine ID, and breakdown start time.', 'error');
+        return;
+    }
+
+    const planId    = await getNextPlanId();
+    const createdBy = document.getElementById('loggedUserName').textContent.trim();
+    const now       = new Date().toISOString();
+
+    const row = {
+        planid:           planId,
+        machine_category: machineType,
+        machine_no:       machineId,
+        service_type:     'Breakdown',
+        year_week:        getWeekNumber(new Date(breakdownStart)),
+        planned_date:     breakdownStart,
+        breakdown_start:  new Date(breakdownStart).toISOString(),
+        notes:            cause,
+        planned_by:       createdBy,
+        created_date:     now,
+        status:           'Pending',
+        is_synced:        false
+    };
+
+    const { error } = await supabaseClient
+        .from('maintenance_plan')
+        .insert([row]);
+
+    if (error) {
+        showBreakdownMessage('Error saving: ' + error.message, 'error');
+        return;
+    }
+
+    showBreakdownMessage('Breakdown reported successfully!', 'success');
+
+    setTimeout(() => {
+        closeBreakdownModal();
+        refreshAll();
+    }, 1000);
+}
+
+
+// ============================================================
+// BREAKDOWN — SHOW MESSAGE
+// ============================================================
+
+function showBreakdownMessage(msg, type) {
+    const el = document.getElementById('breakdownMessage');
+    el.textContent = msg;
+    el.className   = 'plan__message ' + type;
+    el.classList.remove('hidden');
 }
 
 
@@ -1183,11 +1748,11 @@ function showPlanMessage(msg, type) {
 // ============================================================
 // EDIT PLAN — OPEN MODAL
 // - Called when a gantt cell is clicked
-// - Blocked if plan is Completed
+// - Blocked if plan is Completed or Submitted (awaiting review)
 // ============================================================
 function openEditModal(plan) {
 
-    if (plan.status === 'Completed') return;
+    if (plan.status === 'Completed' || plan.status === 'Submitted') return;
 
     window._editingPlanId = plan.planid;
 
@@ -1318,6 +1883,11 @@ async function handleCellClick(planId) {
 
     if (data.status === 'Completed') {
         alert('Completed plans cannot be edited.');
+        return;
+    }
+
+    if (data.status === 'Submitted') {
+        alert('This task is awaiting admin review and cannot be edited.');
         return;
     }
 
@@ -1485,7 +2055,7 @@ function renderPlanGantt(data) {
                         // Mobile: single tap = tooltip, double tap = edit
                         bodyHtml += `<td><span class="plan-grid__cell ${cls}"
                             ontouchstart="handleCellTouch('${plan.planid}', event, '${tip}')"
-                            style="cursor:${plan.status !== 'Completed' ? 'pointer' : 'default'};"
+                            style="cursor:${(plan.status !== 'Completed' && plan.status !== 'Submitted') ? 'pointer' : 'default'};"
                             >${label}</span></td>`;
                     } else {
                         // Desktop: hover = tooltip, click = edit
@@ -1493,7 +2063,7 @@ function renderPlanGantt(data) {
                             onmouseenter="showTooltip(event,'${tip}')"
                             onmouseleave="hideTooltip()"
                             onclick="handleCellClick('${plan.planid}')"
-                            style="cursor:${plan.status !== 'Completed' ? 'pointer' : 'default'};"
+                            style="cursor:${(plan.status !== 'Completed' && plan.status !== 'Submitted') ? 'pointer' : 'default'};"
                             >${label}</span></td>`;
                     }
 
@@ -1572,9 +2142,12 @@ scrollToCurrentWeek(currentWeek, weeks);
 // ============================================================
 
 function getCellLabel(plan, week, currentWeek) {
-    const base        = plan.service_type === 'Scheduled' ? 'S' : 'P';
-    const isCompleted = plan.status === 'Completed';
-    return isCompleted ? base + '-C' : base;
+    let base = 'P';
+    if (plan.service_type === 'Scheduled') base = 'S';
+    if (plan.service_type === 'Breakdown')  base = 'B';
+    if (plan.status === 'Completed') return base + '-C';
+    if (plan.status === 'Submitted') return base + '-R'; // awaiting review
+    return base;
 }
 
 
@@ -1587,10 +2160,18 @@ function getCellLabel(plan, week, currentWeek) {
 function getCellClass(plan, week, currentWeek) {
 
     const isCompleted = plan.status === 'Completed';
+    const isSubmitted = plan.status === 'Submitted';
     const isPast      = week < currentWeek;
     const isFuture    = week > currentWeek;
 
+    if (plan.service_type === 'Breakdown') {
+        if (isCompleted) return 'b-c';
+        if (isSubmitted) return 'b-r';
+        return 'breakdown';
+    }
+
     if (isCompleted) return plan.service_type === 'Scheduled' ? 's-c' : 'p-c';
+    if (isSubmitted) return 'awaiting-review';
     if (isPast)      return 'delayed';
     if (isFuture)    return 'future';
     return plan.service_type === 'Scheduled' ? 'scheduled' : 'planned';
@@ -1617,8 +2198,24 @@ function encodeTooltip(plan) {
         'Completed: '    + formatSLTime(plan.completed_date),
         'Modified: '     + formatSLTime(plan.last_modified),
         'Created: '      + formatSLTime(plan.created_date),
-    ].join('|');
-    return encodeURIComponent(lines);
+    ];
+
+    if (plan.service_type === 'Breakdown') {
+        lines.push('Breakdown start: ' + formatSLTime(plan.breakdown_start));
+        lines.push('Repair start: '    + formatSLTime(plan.repair_start));
+        lines.push('Repair end: '      + formatSLTime(plan.repair_end));
+        lines.push('Downtime (hrs): '  + (plan.downtime_hours ?? '—'));
+        lines.push('Repair (hrs): '    + (plan.repair_hours   ?? '—'));
+        lines.push('Repair cost: '     + (plan.repair_cost    ?? '—'));
+    }
+
+    if (plan.status === 'Submitted' || plan.status === 'Completed') {
+        lines.push('Reviewed by: '  + (plan.reviewed_by    || '—'));
+        lines.push('Review date: '  + formatSLTime(plan.review_date));
+        lines.push('Admin remarks: ' + (plan.admin_remarks || '—'));
+    }
+
+    return encodeURIComponent(lines.join('|'));
 }
 
 
@@ -1706,6 +2303,126 @@ async function loadReports() {
     renderReport1(data);  // Completion rate by machine
     renderReport2(data);  // Weekly schedule status
     renderReport3(data);  // Overdue tasks table
+    renderReport4(data);  // Breakdown summary table
+
+    window._allPlanData = data;       // cached for Report 5 filtering
+    populateMachineHistoryFilter(data);
+    renderReport5();                  // empty until a machine is picked
+}
+
+
+// ============================================================
+// REPORT 5 — MACHINE HISTORY — POPULATE MACHINE DROPDOWN
+// ============================================================
+function populateMachineHistoryFilter(data) {
+
+    const select = document.getElementById('mhMachineFilter');
+    const current = select.value;
+
+    const machines = [...new Set(data.map(r => r.machine_no))].sort();
+
+    select.innerHTML = '<option value="">Select Machine...</option>';
+    machines.forEach(m => {
+        select.innerHTML += `<option value="${m}">${m}</option>`;
+    });
+
+    select.value = current;
+}
+
+
+// ============================================================
+// REPORT 5 — MACHINE HISTORY
+// Filters: Machine (required) + Date range + Service type
+// Shows ALL statuses — Pending / Submitted / Completed
+// ============================================================
+function renderReport5() {
+
+    const container = document.getElementById('reportMachineHistoryTable');
+    const machine    = document.getElementById('mhMachineFilter').value;
+    const fromDate   = document.getElementById('mhFromDate').value;
+    const toDate     = document.getElementById('mhToDate').value;
+    const serviceType = document.getElementById('mhServiceTypeFilter').value;
+
+    if (!machine) {
+        container.innerHTML = '<div style="padding:16px; color:#6b7280; font-size:13px;">Select a machine to view its history.</div>';
+        window._report5Data = [];
+        return;
+    }
+
+    let rows = (window._allPlanData || []).filter(r => r.machine_no === machine);
+
+    if (serviceType) rows = rows.filter(r => r.service_type === serviceType);
+
+    if (fromDate) rows = rows.filter(r => (r.planned_date || '') >= fromDate);
+    if (toDate)   rows = rows.filter(r => (r.planned_date || '') <= toDate);
+
+    rows.sort((a, b) => (b.planned_date || '').localeCompare(a.planned_date || ''));
+
+    if (!rows.length) {
+        container.innerHTML = '<div style="padding:16px; color:#6b7280; font-size:13px;">No records found for the selected filters.</div>';
+        window._report5Data = [];
+        return;
+    }
+
+    let html = `
+        <table class="reports__table">
+            <thead>
+                <tr>
+                    <th>Plan ID</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Planned Date</th>
+                    <th>Breakdown Start</th>
+                    <th>Repair Start</th>
+                    <th>Repair End</th>
+                    <th>Downtime (hrs)</th>
+                    <th>Repair (hrs)</th>
+                    <th>Repair Cost</th>
+                    <th>Completed Date</th>
+                    <th>Reviewed By</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    rows.forEach(row => {
+        html += `
+            <tr>
+                <td>${row.planid}</td>
+                <td>${row.service_type}</td>
+                <td>${row.status}</td>
+                <td>${row.planned_date || '—'}</td>
+                <td>${formatSLTime(row.breakdown_start)}</td>
+                <td>${formatSLTime(row.repair_start)}</td>
+                <td>${formatSLTime(row.repair_end)}</td>
+                <td>${row.downtime_hours ?? '—'}</td>
+                <td>${row.repair_hours ?? '—'}</td>
+                <td>${row.repair_cost ?? '—'}</td>
+                <td>${formatSLTime(row.completed_date)}</td>
+                <td>${row.reviewed_by || '—'}</td>
+            </tr>`;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = `<div class="reports__table-wrap">${html}</div>`;
+
+    window._report5Data = rows;
+}
+
+
+// ============================================================
+// CSV DOWNLOAD — REPORT 5 (Machine History)
+// ============================================================
+function downloadReport5CSV() {
+
+    const d = window._report5Data;
+    if (!d || !d.length) return;
+
+    let csv = 'Plan ID,Type,Status,Planned Date,Breakdown Start,Repair Start,Repair End,Downtime Hours,Repair Hours,Repair Cost,Completed Date,Reviewed By\n';
+    d.forEach(row => {
+        csv += `${row.planid},${row.service_type},${row.status},${row.planned_date || ''},${row.breakdown_start || ''},${row.repair_start || ''},${row.repair_end || ''},${row.downtime_hours ?? ''},${row.repair_hours ?? ''},${row.repair_cost ?? ''},${row.completed_date || ''},${row.reviewed_by || ''}\n`;
+    });
+
+    downloadCSV(csv, 'machine_history.csv');
 }
 
 
@@ -1972,6 +2689,67 @@ function downloadReport3CSV() {
 
 
 // ============================================================
+// REPORT 4 — BREAKDOWN SUMMARY
+// Table: all breakdown tasks with downtime, repair time, cost
+// ============================================================
+function renderReport4(data) {
+
+    const breakdowns = data.filter(row => row.service_type === 'Breakdown');
+
+    const container = document.getElementById('reportBreakdownTable');
+
+    if (!breakdowns.length) {
+        container.innerHTML = '<div style="padding:16px; color:#6b7280; font-size:13px;">No breakdowns recorded.</div>';
+        window._report4Data = [];
+        return;
+    }
+
+    let html = `
+        <table class="reports__table">
+            <thead>
+                <tr>
+                    <th>Plan ID</th>
+                    <th>Machine</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Breakdown Start</th>
+                    <th>Repair Start</th>
+                    <th>Repair End</th>
+                    <th>Downtime (hrs)</th>
+                    <th>Repair (hrs)</th>
+                    <th>Repair Cost</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    breakdowns.forEach(row => {
+        html += `
+            <tr>
+                <td>${row.planid}</td>
+                <td>${row.machine_no}</td>
+                <td>${row.machine_category}</td>
+                <td>${row.status}</td>
+                <td>${formatSLTime(row.breakdown_start)}</td>
+                <td>${formatSLTime(row.repair_start)}</td>
+                <td>${formatSLTime(row.repair_end)}</td>
+                <td>${row.downtime_hours ?? '—'}</td>
+                <td>${row.repair_hours ?? '—'}</td>
+                <td>${row.repair_cost ?? '—'}</td>
+            </tr>`;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = `
+    <div class="reports__table-wrap">
+        ${html}
+    </div>`;
+
+    // Store data for CSV download
+    window._report4Data = breakdowns;
+}
+
+
+// ============================================================
 // CSV DOWNLOAD — HELPER
 // Creates and triggers a CSV file download
 // ============================================================
@@ -1989,4 +2767,22 @@ function downloadCSV(csvContent, filename) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+}
+
+
+// ============================================================
+// CSV DOWNLOAD — REPORT 4
+// Breakdown summary
+// ============================================================
+function downloadReport4CSV() {
+
+    const d = window._report4Data;
+    if (!d || !d.length) return;
+
+    let csv = 'Plan ID,Machine,Category,Status,Breakdown Start,Repair Start,Repair End,Downtime Hours,Repair Hours,Repair Cost\n';
+    d.forEach(row => {
+        csv += `${row.planid},${row.machine_no},${row.machine_category},${row.status},${row.breakdown_start || ''},${row.repair_start || ''},${row.repair_end || ''},${row.downtime_hours ?? ''},${row.repair_hours ?? ''},${row.repair_cost ?? ''}\n`;
+    });
+
+    downloadCSV(csv, 'breakdown_summary.csv');
 }

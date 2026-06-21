@@ -16,8 +16,7 @@
 
     <!-- SUPABASE -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  
+    
 
 </head>
 
@@ -108,6 +107,7 @@
     <div class="dashboard__tabs">
         <button class="dashboard__tab active" onclick="switchTab('plan', this)">Plan</button>
         <button class="dashboard__tab"        onclick="switchTab('Actual', this)">Actual</button>
+        <button class="dashboard__tab"        onclick="switchTab('review', this)">Review</button>
         <button class="dashboard__tab"        onclick="switchTab('dashboard', this)">Dashboard</button>
     </div>
     <!-- END TAB BAR -->
@@ -212,6 +212,7 @@
                 <!-- ACTION BUTTONS -->
                 <div class="plan__actions">
                     <button class="plan__btn-ghost" onclick="previewAndConfirm()">Preview</button>
+                    <button class="plan__btn-danger" onclick="openBreakdownModal()">⚠ Report Breakdown</button>
                 </div>
 
                 <!-- SUCCESS / ERROR MESSAGE -->
@@ -241,6 +242,7 @@
                         <select id="editServiceType" class="plan__input">
                             <option value="Scheduled">Scheduled</option>
                             <option value="Planned">Planned</option>
+                            <option value="Breakdown">Breakdown</option>
                         </select>
                     </div>
 
@@ -263,6 +265,54 @@
 
                 </div>
             </div>
+            <!-- END EDIT PLAN MODAL -->
+
+            <!-- ============================================================
+                REPORT BREAKDOWN MODAL
+                - Triggered by "Report Breakdown" button on Plan tab
+                - Creates a Pending Breakdown task immediately
+            ============================================================ -->
+            <div id="breakdownModal" class="edit-modal hidden">
+                <div class="edit-modal__card">
+
+                    <div class="edit-modal__title">⚠ Report Machine Breakdown</div>
+
+                    <div class="plan__row">
+                        <div class="plan__field">
+                            <label class="plan__label">Machine Type</label>
+                            <select id="bdMachineType" class="plan__input" onchange="onBreakdownMachineTypeChange()">
+                                <option value="">Select Machine Type</option>
+                            </select>
+                        </div>
+
+                        <div class="plan__field">
+                            <label class="plan__label">Machine ID</label>
+                            <select id="bdMachineId" class="plan__input">
+                                <option value="">Select Machine ID</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="plan__field" style="margin-bottom:14px;">
+                        <label class="plan__label">Breakdown Start (date &amp; time)</label>
+                        <input type="datetime-local" id="bdBreakdownStart" class="plan__input">
+                    </div>
+
+                    <div class="plan__field" style="margin-bottom:20px;">
+                        <label class="plan__label">Cause / Description</label>
+                        <textarea id="bdCause" class="plan__input" rows="3" placeholder="What happened..."></textarea>
+                    </div>
+
+                    <div class="plan__actions">
+                        <button class="plan__btn-ghost" onclick="closeBreakdownModal()">Cancel</button>
+                        <button class="plan__btn-danger" onclick="saveBreakdownReport()">Report Breakdown</button>
+                    </div>
+
+                    <div id="breakdownMessage" class="plan__message hidden"></div>
+
+                </div>
+            </div>
+            <!-- END REPORT BREAKDOWN MODAL -->
             <!-- END PLAN FORM CARD -->
     </div>
 
@@ -329,6 +379,11 @@
                     <p id="dashboardCompletedCount">0</p>
                 </div>
 
+                <div class="dashboard__stat-card dashboard__stat-card--danger">
+                    <h2>Breakdowns</h2>
+                    <p id="dashboardBreakdownCount">0</p>
+                </div>
+
             </div>
             <!-- END STAT CARDS -->
 
@@ -385,6 +440,75 @@
 
 
     <!-- ============================================================
+         TAB: REVIEW (Maintenance Admin)
+         - Lists all Submitted tasks (Scheduled / Planned / Breakdown)
+         - Admin reviews technician's work, enters cost for
+           Breakdown tasks, adds remarks, and signs off
+         - Signing off sets status to Completed
+    ============================================================ -->
+    <div id="tab-review" class="dashboard__tab-content hidden">
+
+        <div class="dashboard__container">
+
+            <!-- STAT CARDS -->
+            <div class="dashboard__stats-grid">
+
+                <div class="dashboard__stat-card">
+                    <h2>Awaiting Review</h2>
+                    <p id="reviewPendingCount">0</p>
+                </div>
+
+                <div class="dashboard__stat-card">
+                    <h2>Signed Off Today</h2>
+                    <p id="reviewSignedTodayCount">0</p>
+                </div>
+
+            </div>
+            <!-- END STAT CARDS -->
+
+
+            <!-- ------------------------------------------------
+                 REVIEW LIST SCREEN
+                 - Default visible inside Review tab
+                 - Hidden when a review detail is opened
+            ------------------------------------------------ -->
+            <div id="reviewListScreen">
+                <div id="reviewTaskList"></div>
+            </div>
+
+
+            <!-- ------------------------------------------------
+                 REVIEW DETAIL SCREEN
+                 - Hidden by default
+                 - Shown when a Submitted task card is tapped
+            ------------------------------------------------ -->
+            <div id="reviewDetailScreen" class="checklist-screen hidden">
+
+                <!-- Top Bar -->
+                <div class="checklist-topbar">
+                    <button class="back-button" onclick="backToReviewList()">← Back</button>
+                    <div class="checklist-title">Admin Review</div>
+                </div>
+
+                <!-- Review Content (populated by JS) -->
+                <div id="reviewContainer" class="checklist-container"></div>
+
+                <!-- Sign-off Bar -->
+                <div class="checklist-bottom-bar">
+                    <button class="save-button" onclick="signOffTask()">✓ Sign Off &amp; Complete</button>
+                </div>
+
+            </div>
+            <!-- END REVIEW DETAIL SCREEN -->
+
+
+        </div>
+
+    </div>
+    <!-- END TAB: REVIEW -->
+
+
+    <!-- ============================================================
          TAB: DASHBOARD
          - Summary stat cards loaded from Supabase
          - Total Planned, Scheduled, Pending, Completed, Overdue
@@ -392,6 +516,11 @@
     <div id="tab-dashboard" class="dashboard__tab-content hidden">
 
         <div class="dash__container">
+
+            <div class="downtime-section-title">
+                Total Downtime <span id="downtimeMonthLabel"></span>
+            </div>
+            <div id="downtimeBannerRow" class="downtime-banner-row"></div>
 
             <div class="dash__grid">
 
@@ -418,6 +547,21 @@
                 <div class="dash__card">
                     <div class="dash__label">Overdue</div>
                     <div class="dash__number dash__number--overdue" id="dashOverdue">0</div>
+                </div>
+
+                <div class="dash__card">
+                    <div class="dash__label">Breakdowns</div>
+                    <div class="dash__number dash__number--overdue" id="dashBreakdowns">0</div>
+                </div>
+
+                <div class="dash__card">
+                    <div class="dash__label">Total Repair Cost</div>
+                    <div class="dash__number dash__number--overdue" id="dashRepairCost">0</div>
+                </div>
+
+                <div class="dash__card">
+                    <div class="dash__label">Total Downtime (hrs)</div>
+                    <div class="dash__number dash__number--overdue" id="dashDowntimeHours">0</div>
                 </div>
 
             </div>
@@ -467,6 +611,50 @@
                 <button class="reports__download-btn" onclick="downloadReport3CSV()">⬇ Download CSV</button>
             </div>
             <div id="reportOverdueTable"></div>
+        </div>
+
+        <!-- ------------------------------------------------
+             REPORT 4 — Breakdown Summary
+             Table: all breakdowns with downtime, repair time, cost
+        ------------------------------------------------ -->
+        <div class="reports__card">
+            <div class="reports__card-header">
+                <div class="reports__card-title">Breakdown Summary</div>
+                <button class="reports__download-btn" onclick="downloadReport4CSV()">⬇ Download CSV</button>
+            </div>
+            <div id="reportBreakdownTable"></div>
+        </div>
+
+        <!-- ------------------------------------------------
+             REPORT 5 — Machine History
+             Filters: Machine (required) + Date range + Service type
+             Shows ALL statuses (Pending/Submitted/Completed)
+        ------------------------------------------------ -->
+        <div class="reports__card">
+            <div class="reports__card-header">
+                <div class="reports__card-title">Machine History</div>
+                <button class="reports__download-btn" onclick="downloadReport5CSV()">⬇ Download CSV</button>
+            </div>
+
+            <div class="reports__filters">
+                <select id="mhMachineFilter" class="plan__input" onchange="renderReport5()">
+                    <option value="">Select Machine...</option>
+                </select>
+
+                <input type="date" id="mhFromDate" class="plan__input" onchange="renderReport5()">
+                <input type="date" id="mhToDate" class="plan__input" onchange="renderReport5()">
+
+                <select id="mhServiceTypeFilter" class="plan__input" onchange="renderReport5()">
+                    <option value="">All Types</option>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Planned">Planned</option>
+                    <option value="Breakdown">Breakdown</option>
+                </select>
+            </div>
+
+            <div id="reportMachineHistoryTable">
+                <div style="padding:16px; color:#6b7280; font-size:13px;">Select a machine to view its history.</div>
+            </div>
         </div>
         
 
