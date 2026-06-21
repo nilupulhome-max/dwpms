@@ -1629,3 +1629,64 @@ body {
     color: #1e3a8a;
     border: 1px solid #c7d2fe;
 }
+
+/* Admin table toolbar: search + add button */
+.admin__toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.admin__search-input {
+    flex: 1;
+    padding: 7px 11px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    background: #f9fafb;
+}
+
+.admin__search-input:focus {
+    border-color: #3b82f6;
+    background: #fff;
+}
+
+/* Pagination bar */
+.admin__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.admin__page-btn {
+    padding: 5px 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    color: #374151;
+    transition: background 0.15s;
+}
+
+.admin__page-btn:hover:not(:disabled) {
+    background: #f3f4f6;
+}
+
+.admin__page-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.admin__page-info {
+    font-size: 13px;
+    color: #6b7280;
+    min-width: 90px;
+    text-align: center;
+}

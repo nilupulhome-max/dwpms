@@ -2955,9 +2955,11 @@ function showAdminBackupMessage(msg, type) {
 }
 
 
+const ADMIN_PAGE_SIZE = 10;
+
 // ============================================================
 // ADMIN TAB — LOAD TABLE
-// Fetches up to 500 rows and renders the data grid
+// Fetches up to 500 rows, most recent first, then renders
 // ============================================================
 
 async function loadAdminTable(tableName, btn) {
@@ -2966,13 +2968,18 @@ async function loadAdminTable(tableName, btn) {
     if (btn) btn.classList.add('active');
 
     window._adminCurrentTable = tableName;
+    window._adminPage         = 0;
+    window._adminSearch       = '';
 
     const container = document.getElementById('adminTableContainer');
     container.innerHTML = '<div style="padding:16px; color:#6b7280; font-size:13px;">Loading…</div>';
 
+    const cfg = ADMIN_TABLE_CONFIG[tableName];
+
     const { data, error } = await supabaseClient
         .from(tableName)
         .select('*')
+        .order(cfg.pk, { ascending: false })
         .limit(500);
 
     if (error) {
@@ -2980,64 +2987,123 @@ async function loadAdminTable(tableName, btn) {
         return;
     }
 
-    renderAdminTable(tableName, data);
+    window._adminTableData = data;
+    renderAdminTable(tableName);
 }
 
 
 // ============================================================
-// ADMIN TAB — RENDER TABLE
+// ADMIN TAB — RENDER TABLE (paginated + searchable)
 // ============================================================
 
-function renderAdminTable(tableName, data) {
-    const container = document.getElementById('adminTableContainer');
-    const cfg       = ADMIN_TABLE_CONFIG[tableName];
+function renderAdminTable(tableName) {
+    const container  = document.getElementById('adminTableContainer');
+    const allData    = window._adminTableData || [];
+    const search     = (window._adminSearch  || '').toLowerCase().trim();
+    const page       = window._adminPage     || 0;
 
-    if (!data.length) {
-        container.innerHTML = `
-            <div style="margin-bottom:10px;">
-                <button class="plan__btn-primary" style="padding:6px 14px; font-size:13px;"
-                        onclick="openAdminAdd('${tableName}')">+ Add New</button>
-            </div>
-            <div style="padding:16px; color:#6b7280; font-size:13px;">No records found.</div>`;
-        return;
-    }
+    // Apply search filter across all column values
+    const filtered = search
+        ? allData.filter(row =>
+            Object.values(row).some(v => String(v ?? '').toLowerCase().includes(search)))
+        : allData;
 
-    const cols = Object.keys(data[0]);
+    const total      = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
+    const safePage   = Math.min(page, totalPages - 1);
+    const start      = safePage * ADMIN_PAGE_SIZE;
+    const pageData   = filtered.slice(start, start + ADMIN_PAGE_SIZE);
+    const cols       = allData.length ? Object.keys(allData[0]) : [];
 
+    // Toolbar: search + add button
     let html = `
-        <div style="margin-bottom:10px; display:flex; gap:8px; align-items:center;">
-            <span style="font-size:13px; color:#6b7280;">${data.length} records</span>
-            <button class="plan__btn-primary" style="padding:6px 14px; font-size:13px;"
+        <div class="admin__toolbar">
+            <input type="text" id="adminSearch" class="admin__search-input"
+                   placeholder="Search all columns…" value="${(window._adminSearch || '').replace(/"/g, '&quot;')}"
+                   oninput="onAdminSearch()">
+            <button class="plan__btn-primary" style="padding:7px 14px; font-size:13px;"
                     onclick="openAdminAdd('${tableName}')">+ Add New</button>
         </div>
-        <div class="admin__table-wrap">
-        <table class="admin__table">
-            <thead><tr>`;
+        <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">
+            ${total} record${total !== 1 ? 's' : ''}${search ? ' matching "' + search + '"' : ''}
+            &nbsp;·&nbsp; showing ${start + 1}–${Math.min(start + ADMIN_PAGE_SIZE, total)} of ${total}
+        </div>`;
 
-    cols.forEach(c => { html += `<th>${c}</th>`; });
-    html += `<th>Actions</th></tr></thead><tbody>`;
+    if (!pageData.length) {
+        html += '<div style="padding:12px; color:#6b7280; font-size:13px;">No records found.</div>';
+    } else {
+        html += `<div class="admin__table-wrap"><table class="admin__table"><thead><tr>`;
+        cols.forEach(c => { html += `<th>${c}</th>`; });
+        html += `<th>Actions</th></tr></thead><tbody>`;
 
-    data.forEach(row => {
-        const rowJson = encodeURIComponent(JSON.stringify(row));
-        html += '<tr>';
-        cols.forEach(c => {
-            const val     = row[c];
-            const raw     = val === null || val === undefined ? '' : String(val);
-            const display = typeof val === 'boolean' ? (val ? '✓' : '✗')
-                          : raw.length > 40 ? raw.slice(0, 40) + '…'
-                          : raw || '—';
-            html += `<td title="${raw.replace(/"/g, '&quot;')}">${display}</td>`;
+        pageData.forEach(row => {
+            const rowJson = encodeURIComponent(JSON.stringify(row));
+            html += '<tr>';
+            cols.forEach(c => {
+                const val     = row[c];
+                const raw     = val === null || val === undefined ? '' : String(val);
+                const display = typeof val === 'boolean' ? (val ? '✓' : '✗')
+                              : raw.length > 40 ? raw.slice(0, 40) + '…'
+                              : raw || '—';
+                html += `<td title="${raw.replace(/"/g, '&quot;')}">${display}</td>`;
+            });
+            html += `<td style="white-space:nowrap;">
+                <button class="admin__btn-edit"
+                        onclick="openAdminEdit('${tableName}', '${rowJson}')">Edit</button>
+                <button class="admin__btn-delete"
+                        onclick="deleteAdminRow('${tableName}', '${rowJson}')">Delete</button>
+            </td></tr>`;
         });
-        html += `<td style="white-space:nowrap;">
-            <button class="admin__btn-edit"
-                    onclick="openAdminEdit('${tableName}', '${rowJson}')">Edit</button>
-            <button class="admin__btn-delete"
-                    onclick="deleteAdminRow('${tableName}', '${rowJson}')">Delete</button>
-        </td></tr>`;
-    });
 
-    html += '</tbody></table></div>';
+        html += '</tbody></table></div>';
+    }
+
+    // Pagination bar
+    html += `
+        <div class="admin__pagination">
+            <button class="admin__page-btn" onclick="goAdminPage(-1)"
+                    ${safePage === 0 ? 'disabled' : ''}>← Prev</button>
+            <span class="admin__page-info">Page ${safePage + 1} of ${totalPages}</span>
+            <button class="admin__page-btn" onclick="goAdminPage(1)"
+                    ${safePage >= totalPages - 1 ? 'disabled' : ''}>Next →</button>
+        </div>`;
+
     container.innerHTML = html;
+
+    // Re-focus search box so typing continues uninterrupted
+    const searchEl = document.getElementById('adminSearch');
+    if (searchEl && search) {
+        searchEl.focus();
+        searchEl.setSelectionRange(searchEl.value.length, searchEl.value.length);
+    }
+}
+
+
+// ============================================================
+// ADMIN TAB — SEARCH
+// ============================================================
+
+function onAdminSearch() {
+    window._adminSearch = document.getElementById('adminSearch').value;
+    window._adminPage   = 0;
+    renderAdminTable(window._adminCurrentTable);
+}
+
+
+// ============================================================
+// ADMIN TAB — PAGINATION
+// ============================================================
+
+function goAdminPage(dir) {
+    const allData    = window._adminTableData || [];
+    const search     = (window._adminSearch  || '').toLowerCase().trim();
+    const filtered   = search
+        ? allData.filter(row => Object.values(row).some(v => String(v ?? '').toLowerCase().includes(search)))
+        : allData;
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ADMIN_PAGE_SIZE));
+
+    window._adminPage = Math.max(0, Math.min((window._adminPage || 0) + dir, totalPages - 1));
+    renderAdminTable(window._adminCurrentTable);
 }
 
 
