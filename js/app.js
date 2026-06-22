@@ -654,6 +654,12 @@ console.log('Checklist items loaded:', items.length);
     const container = document.getElementById('checklistContainer');
     container.innerHTML = '';
 
+    // Update save button label based on service type
+    const saveBtn = document.getElementById('saveChecklistBtn');
+    if (saveBtn) {
+        saveBtn.textContent = data.service_type === 'Scheduled' ? 'Save Checklist' : 'Save Report';
+    }
+
     if (data.service_type === 'Breakdown') {
 
         // Breakdown task — capture repair start/end + cost
