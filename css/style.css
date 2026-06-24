@@ -86,11 +86,15 @@ body {
 }
 .nsoft__title {
     text-align: center;
-    font-size: 12px;
-    font-weight: bold;
-    color: #4501ff;
-    margin-top: 20px;
+    font-size: 0.72rem;
+    color: #aab;
+    margin-top: 18px;
     margin-bottom: 10px;
+}
+
+.nsoft__title strong {
+    color: #1a3a5c;
+    font-weight: 700;
 }
 
 .login__input {
