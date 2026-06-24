@@ -1192,6 +1192,14 @@ async function openReview(planId) {
         }
 
         html += `</div></div>`;
+
+        html += `
+            <div class="check-row" style="margin-top:12px;">
+                <div class="check-text">Maintenance Cost</div>
+                <input type="number" id="reviewRepairCost" class="plan__input"
+                       placeholder="0.00" step="0.01" min="0"
+                       value="${plan.repair_cost ?? ''}">
+            </div>`;
     }
 
     html += `
