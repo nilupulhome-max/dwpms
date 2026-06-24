@@ -481,6 +481,8 @@ function renderDashboardStats(taskData) {
 
 function renderTaskCards(taskData) {
 
+    window._actualFilteredTasks = taskData;
+
     const container   = document.getElementById('dashboardTaskList');
     container.innerHTML = '';
 
@@ -541,6 +543,51 @@ function renderTaskCards(taskData) {
             </div>
         `;
     });
+}
+
+
+// ============================================================
+// ACTUAL TAB — DOWNLOAD PENDING TASKS AS CSV
+// ============================================================
+function downloadPendingTasksCSV() {
+
+    const tasks = window._actualFilteredTasks;
+    if (!tasks || !tasks.length) {
+        alert('No tasks to download.');
+        return;
+    }
+
+    const headers = ['Plan No', 'Machine Category', 'Machine No', 'Task Type', 'Scheduled Week', 'Planned Date', 'Status', 'Notes / Comments'];
+    const rows = tasks.map(t => {
+        let notesCol = 'Scheduled';
+        if (t.service_type === 'Breakdown' || t.service_type === 'Planned') {
+            const parts = [];
+            if (t.notes)    parts.push(t.notes);
+            if (t.comments) parts.push(t.comments);
+            notesCol = parts.join(' | ');
+        }
+        return [
+            t.planid           || '',
+            t.machine_category || '',
+            t.machine_no       || '',
+            t.service_type     || '',
+            t.year_week        || '',
+            t.planned_date     ? t.planned_date.split('T')[0] : '',
+            t.status           || '',
+            notesCol
+        ];
+    });
+
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+    const filterLabel = (window._actualFilterType === 'weekPending' ? 'ThisWeekPending'
+                       : window._actualFilterType === 'allPending'  ? 'AllPending'
+                       : 'AllTasks');
+
+    const today = new Date().toISOString().split('T')[0];
+    downloadCSV(csvContent, `PendingTasks_${filterLabel}_${today}.csv`);
 }
 
 
@@ -3029,7 +3076,7 @@ function renderAdminTable(tableName) {
     const pageData   = filtered.slice(start, start + ADMIN_PAGE_SIZE);
     const cols       = allData.length ? Object.keys(allData[0]) : [];
 
-    // Toolbar: search + add button
+    // Toolbar: search + add button + delete all button
     let html = `
         <div class="admin__toolbar">
             <input type="text" id="adminSearch" class="admin__search-input"
@@ -3037,6 +3084,8 @@ function renderAdminTable(tableName) {
                    oninput="onAdminSearch()">
             <button class="plan__btn-primary" style="padding:7px 14px; font-size:13px;"
                     onclick="openAdminAdd('${tableName}')">+ Add New</button>
+            <button class="admin__btn-delete-all"
+                    onclick="deleteAllAdminRows('${tableName}')">&#128465; Delete All</button>
         </div>
         <div style="font-size:12px; color:#6b7280; margin-bottom:8px;">
             ${total} record${total !== 1 ? 's' : ''}${search ? ' matching "' + search + '"' : ''}
@@ -3309,6 +3358,41 @@ async function deleteAdminRow(tableName, rowJson) {
 
     if (error) {
         alert('Delete failed: ' + error.message);
+        return;
+    }
+
+    loadAdminTable(tableName, null);
+}
+
+
+// ============================================================
+// ADMIN TAB — DELETE ALL ROWS IN TABLE
+// ============================================================
+
+async function deleteAllAdminRows(tableName) {
+    const cfg   = ADMIN_TABLE_CONFIG[tableName];
+    const total = (window._adminTableData || []).length;
+
+    if (total === 0) {
+        alert('Table is already empty.');
+        return;
+    }
+
+    const confirmed = confirm(
+        `DELETE ALL ${total} record(s) from "${cfg.label}"?\n\n` +
+        `This will permanently erase every row in this table.\n` +
+        `Type OK to confirm — this cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    // Delete every row by filtering where PK is not null (matches all rows)
+    const { error } = await supabaseClient
+        .from(tableName)
+        .delete()
+        .not(cfg.pk, 'is', null);
+
+    if (error) {
+        alert('Delete all failed: ' + error.message);
         return;
     }
 

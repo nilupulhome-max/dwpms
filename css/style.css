@@ -366,6 +366,16 @@ body {
     transform: scale(0.97);
 }
 
+/* Download button variant — green to distinguish from filter buttons */
+.dashboard__filter-button--download {
+    background: #16a34a;
+    margin-left: auto;
+}
+
+.dashboard__filter-button--download:hover {
+    background: #15803d;
+}
+
 
 /* ============================================================
    7. ACTUAL TAB â€” TASK CARDS
@@ -1609,6 +1619,22 @@ body {
     border-radius: 6px;
     font-size: 11px;
     cursor: pointer;
+}
+
+/* Delete All button in toolbar */
+.admin__btn-delete-all {
+    background: #b91c1c;
+    color: white;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.admin__btn-delete-all:hover {
+    background: #991b1b;
 }
 
 /* Edit modal overrides for admin (taller, scrollable) */
